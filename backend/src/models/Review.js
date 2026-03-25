@@ -1,28 +1,29 @@
 import mongoose from "mongoose";
 
-const bookingSchema = new mongoose.Schema(
+const reviewSchema = new mongoose.Schema(
   {
     menteeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
     mentorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
-    status: {
-      type: String,
-      enum: ["pending", "accepted", "completed", "cancelled"],
-      default: "pending",
-    },
-
-    scheduledAt: {
-      type: Date,
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
       required: true,
+    },
+    comment: {
+      type: String,
+    },
+    rating: {
+      type: Number,
+      max: 5,
+      min: 1,
     },
   },
   {
@@ -30,4 +31,4 @@ const bookingSchema = new mongoose.Schema(
   },
 );
 
-export default mongoose.model("Booking", bookingSchema);
+export default mongoose.model("Review", reviewSchema);
