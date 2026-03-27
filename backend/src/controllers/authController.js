@@ -15,13 +15,23 @@ export const register = async function (req, res) {
     const newUser = await User.create({ name, email, password, role });
 
     const payload = {
-      sub: newUser._id,
+      sub: newUser._id, // Payload — the data you stored (like userId, role)
+
       role: newUser.role,
     };
 
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 
-    res.status(201).json({ success: true, token: token, user: newUser });
+    res.status(201).json({
+      success: true,
+      token: token,
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
