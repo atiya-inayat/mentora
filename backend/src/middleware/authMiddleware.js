@@ -1,8 +1,39 @@
+// 1. client send request with token in header
+// 2. middleware intercepts the request
+// 3. extracts the token
+// 4. verify it with JWT_SECRET
+// 5. if valid - attaches user to request - continue
+// 6. if inavalid - bloacks requests - return 401
+
 import jwt from "jsonwebtoken";
 
 export const protect = async (req, res, next) => {
   try {
+    const authHeader = req.headers.authorization;
+
+    // Check header
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+      });
+    }
+
+    // Extract token
+    const token = authHeader.split(" ")[1];
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Attach user info to request
+    req.user = decoded;
+
+    // Move to next middleware/controller
+    next();
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
   }
 };
