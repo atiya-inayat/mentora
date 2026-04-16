@@ -7,6 +7,7 @@
 
 import jwt from "jsonwebtoken";
 
+// authentication
 export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -36,4 +37,15 @@ export const protect = async (req, res, next) => {
       message: "Invalid or expired token",
     });
   }
+};
+
+// authorization - role based access
+export const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    next();
+  };
 };
