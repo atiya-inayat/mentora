@@ -36,3 +36,25 @@ export const createMentorProfile = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getAllMentors = async (req, res) => {
+  try {
+    // We find all profiles and "join" the User data
+    // We only want the 'name' and want to hide 'email' and 'password'
+    const mentors = await MentorProfile.find().populate(
+      "userId",
+      "name -email -password",
+    );
+
+    return res.status(200).json({
+      success: true,
+      count: mentors.length, // show how many were found
+      data: mentors,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching mentors",
+    });
+  }
+};

@@ -6,6 +6,7 @@
 // 6. if inavalid - bloacks requests - return 401
 
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 // authentication
 export const protect = async (req, res, next) => {
@@ -25,9 +26,11 @@ export const protect = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Attach user info to request
-    req.user = decoded;
+    const user = await User.findById(decoded.sub); // Use 'sub' here!
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    req.user = user;
 
     // Move to next middleware/controller
     next();
