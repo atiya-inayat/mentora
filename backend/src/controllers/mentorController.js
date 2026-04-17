@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import MentorProfile from "../models/MentorProfile.js";
 
 export const createMentorProfile = async (req, res) => {
@@ -6,7 +7,7 @@ export const createMentorProfile = async (req, res) => {
 
     // ✓ Corrected to findOne for field searching
     const existingProfile = await MentorProfile.findOne({
-      userId: req.user._id,
+      userId: req.user.sub,
     });
 
     if (existingProfile) {
@@ -17,7 +18,7 @@ export const createMentorProfile = async (req, res) => {
     }
 
     const newProfile = await MentorProfile.create({
-      userId: req.user._id,
+      userId: req.user.sub,
       bio,
       hourlyRate,
       skills,
@@ -41,10 +42,7 @@ export const getAllMentors = async (req, res) => {
   try {
     // We find all profiles and "join" the User data
     // We only want the 'name' and want to hide 'email' and 'password'
-    const mentors = await MentorProfile.find().populate(
-      "userId",
-      "name -email -password",
-    );
+    const mentors = await MentorProfile.find().populate("userId", "name role ");
 
     return res.status(200).json({
       success: true,
@@ -56,5 +54,31 @@ export const getAllMentors = async (req, res) => {
       success: false,
       message: "Error fetching mentors",
     });
+  }
+};
+
+export const getMentorById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid mentor id " });
+    }
+
+    const mentor = await MentorProfile.findById(id).populate(
+      "userId",
+      "name role",
+    );
+
+    if (!mentor) {
+      return res
+        .status(404)
+        .json({ success: false, message: "mentor not found." });
+    }
+
+    return res.status(200).json({ success: true, mentor });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
