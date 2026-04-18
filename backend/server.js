@@ -5,6 +5,7 @@ import { connectDB } from "./src/config/db.js"; // named import —  db function
 import router from "./src/routes/authRoutes.js";
 import mentorRoutes from "./src/routes/mentorRoutes.js";
 import bookingRoutes from "./src/routes/bookingRoutes.js";
+import paymentRoutes from "./src/routes/paymentRoutes.js";
 
 const app = express(); // creates your express app
 
@@ -16,6 +17,7 @@ const PORT = process.env.PORT || 5000; // reads PORT from .env
 app.use("/api/auth", router);
 app.use("/api/mentors", mentorRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/payments", paymentRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {

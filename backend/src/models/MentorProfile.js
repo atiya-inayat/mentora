@@ -23,6 +23,10 @@ const mentorProfileSchema = new mongoose.Schema(
         endTime: String,
       },
     ],
+    stripeAccountId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

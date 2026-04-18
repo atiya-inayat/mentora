@@ -9,3 +9,5 @@ const router = express.Router();
 
 router.post("/:mentorId", protect, restrictTo("mentee"), createBooking);
 router.put("/:id/accept", protect, restrictTo("mentor"), acceptBooking);
+
+export default router;
