@@ -6,6 +6,7 @@ import router from "./src/routes/authRoutes.js";
 import mentorRoutes from "./src/routes/mentorRoutes.js";
 import bookingRoutes from "./src/routes/bookingRoutes.js";
 import paymentRoutes from "./src/routes/paymentRoutes.js";
+import sessionRouter from "./src/routes/sessionRoutes.js";
 
 const app = express(); // creates your express app
 
@@ -18,6 +19,7 @@ app.use("/api/auth", router);
 app.use("/api/mentors", mentorRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/sessions", sessionRouter);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
