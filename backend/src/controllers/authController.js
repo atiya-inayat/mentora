@@ -59,6 +59,13 @@ export const login = async function (req, res) {
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been suspended",
+      });
+    }
+
     res.status(200).json({
       success: true,
       token: token,

@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema(
       enum: ["mentee", "mentor", "admin"],
       default: "mentee",
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
