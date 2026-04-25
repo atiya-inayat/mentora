@@ -8,6 +8,7 @@ import bookingRoutes from "./src/routes/bookingRoutes.js";
 import paymentRoutes from "./src/routes/paymentRoutes.js";
 import sessionRouter from "./src/routes/sessionRoutes.js";
 import reviewRouter from "./src/routes/reviewRoutes.js";
+import adminRoutes from "./src/routes/adminRoute.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { initSocket } from "./src/socket/socketHandler.js";
@@ -32,6 +33,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/sessions", sessionRouter);
 app.use("/api/reviews", reviewRouter);
+app.use("/api/admin", adminRoutes);
 
 connectDB().then(() => {
   httpServer.listen(PORT, () => {
