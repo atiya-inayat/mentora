@@ -7,8 +7,18 @@ import mentorRoutes from "./src/routes/mentorRoutes.js";
 import bookingRoutes from "./src/routes/bookingRoutes.js";
 import paymentRoutes from "./src/routes/paymentRoutes.js";
 import sessionRouter from "./src/routes/sessionRoutes.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { initSocket } from "./src/socket/socketHandler.js";
 
 const app = express(); // creates your express app
+const httpServer = createServer(app);
+
+const io = new Server(httpServer, {
+  cors: { origin: "*" },
+});
+
+initSocket(io);
 
 app.use(cors()); // middleware — enables cross-origin requests
 app.use(express.json()); // middleware — lets you read JSON request bodies
@@ -22,7 +32,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/sessions", sessionRouter);
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 });
