@@ -12,6 +12,8 @@ import adminRoutes from "./src/routes/adminRoute.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { initSocket } from "./src/socket/socketHandler.js";
+import { errorHandler } from "./src/middleware/errorMiddleware.js";
+import { limiter } from "./src/middleware/rateLimiter.js";
 
 const app = express(); // creates your express app
 const httpServer = createServer(app);
@@ -27,6 +29,7 @@ app.use(express.json()); // middleware — lets you read JSON request bodies
 
 const PORT = process.env.PORT || 5000; // reads PORT from .env
 
+app.use(limiter);
 app.use("/api/auth", router);
 app.use("/api/mentors", mentorRoutes);
 app.use("/api/bookings", bookingRoutes);
@@ -34,6 +37,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/sessions", sessionRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/admin", adminRoutes);
+app.use(errorHandler);
 
 connectDB().then(() => {
   httpServer.listen(PORT, () => {
