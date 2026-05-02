@@ -30,7 +30,7 @@ export default function LoginPage() {
   // setup mutation
   const { mutate, isPending, error } = useMutation({
     mutationFn: async (data) => {
-      const res = await api.post("/auth/login", data);
+      const res = await api.post("/api/auth/login", data);
       return res.data;
     },
     onSuccess: (data) => {

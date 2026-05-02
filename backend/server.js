@@ -19,15 +19,23 @@ const app = express(); // creates your express app
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
-  cors: { origin: "*" },
+  cors: {
+    origin: "http://localhost:3001",
+    credentials: true,
+  },
 });
 
 initSocket(io);
 
-app.use(cors()); // middleware — enables cross-origin requests
+app.use(
+  cors({
+    origin: "http://localhost:3001",
+    credentials: true,
+  }),
+); // middleware — enables cross-origin requests
 app.use(express.json()); // middleware — lets you read JSON request bodies
 
-const PORT = process.env.PORT || 5000; // reads PORT from .env
+const PORT = process.env.PORT || 3001; // reads PORT from .env
 
 app.use(limiter);
 app.use("/api/auth", authLimiter, router);
