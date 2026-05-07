@@ -88,3 +88,22 @@ export const acceptBooking = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getMyBookings = async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const role = req.user.role;
+
+    const filter =
+      role === "mentor" ? { mentorId: userId } : { menteeId: userId };
+
+    const bookings = await Booking.find(filter)
+      .populate("mentorId", "name email")
+      .populate("menteeId", "name email")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

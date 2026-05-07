@@ -1,10 +1,10 @@
 "use client";
 
-import { useMentor } from "@/lib/hooks/useMentors";
-import MentorCard from "../components/mentor/MentorCard";
+import { useMentors } from "@/lib/hooks/useMentors";
+import MentorCard from "@/app/components/mentor/MentorCard";
 
 const MentorPage = () => {
-  const { data, isLoading, error } = useMentor();
+  const { data, isLoading, error } = useMentors();
 
   if (isLoading) {
     return <div>Loading mentors...</div>;

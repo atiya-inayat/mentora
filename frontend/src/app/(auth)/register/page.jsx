@@ -58,6 +58,8 @@ export default function RegisterPage() {
     onSuccess: (data) => {
       const { user, token } = data;
       setAuth(user, token);
+      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+
       localStorage.setItem("token", token);
       const role = user?.role;
       const routes = {
