@@ -8,7 +8,7 @@ export default function MentorDashboard() {
   const queryClient = useQueryClient();
 
   const { mutate: acceptBooking } = useMutation({
-    mutationFn: (bookingId) => api.put(`/bookings/${bookingId}/accept`),
+    mutationFn: (bookingId) => api.put(`/api/bookings/${bookingId}/accept`),
     onSuccess: () => queryClient.invalidateQueries(["bookings"]),
   });
 

@@ -16,7 +16,7 @@ export default function AdminPanel() {
   });
 
   const { mutate: approveMentor } = useMutation({
-    mutationFn: (mentorId) => api.put(`/admin/mentors/${mentorId}/approve`),
+    mutationFn: (mentorId) => api.put(`/api/admin/mentors/${mentorId}/approve`),
     onSuccess: () => queryClient.invalidateQueries(["admin"]),
   });
 

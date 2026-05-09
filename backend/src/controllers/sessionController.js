@@ -176,3 +176,31 @@ export const endSession = async (req, res) => {
     });
   }
 };
+
+export const getSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId).populate({
+      path: "bookingId",
+      populate: [
+        { path: "mentorId", select: "name _id" },
+        { path: "menteeId", select: "name _id" },
+      ],
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Session not found",
+      });
+    }
+
+    return res.status(200).json({ success: true, data: session });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

@@ -9,7 +9,7 @@ export const useMyBookings = () => {
   return useQuery({
     queryKey: ["bookings", "my"],
     queryFn: async () => {
-      const res = await api.get("/bookings/my");
+      const res = await api.get("/api/bookings/my");
       return res.data;
     },
   });

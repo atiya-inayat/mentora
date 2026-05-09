@@ -20,7 +20,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3001",
+    origin: "http://localhost:3000",
     credentials: true,
   },
 });
@@ -29,13 +29,13 @@ initSocket(io);
 
 app.use(
   cors({
-    origin: "http://localhost:3001",
+    origin: "http://localhost:3000",
     credentials: true,
   }),
 ); // middleware — enables cross-origin requests
 app.use(express.json()); // middleware — lets you read JSON request bodies
 
-const PORT = process.env.PORT || 3001; // reads PORT from .env
+const PORT = process.env.PORT || 3000; // reads PORT from .env
 
 app.use(limiter);
 app.use("/api/auth", authLimiter, router);
