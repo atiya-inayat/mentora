@@ -5,6 +5,13 @@ export default function Home() {
     <div>
       <div>
         <Navbar />
+
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Temporibus
+          ipsa, perspiciatis sed molestiae laudantium aspernatur vero inventore
+          est accusantium reprehenderit repellendus, dolor, iusto ullam eos
+          neque nobis veritatis assumenda soluta?
+        </p>
       </div>
       <h1>Hello World</h1>
     </div>
