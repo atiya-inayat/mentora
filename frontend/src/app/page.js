@@ -5,6 +5,7 @@ export default function Home() {
     <div>
       <div>
         <Navbar />
+        <Navbar />
 
         <p>
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Temporibus
