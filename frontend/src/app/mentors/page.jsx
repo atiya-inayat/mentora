@@ -10,7 +10,7 @@ const MentorPage = () => {
     return <div>Loading mentors...</div>;
   }
 
-  if (error) {
+  if (error || !data?.data) {
     return <div>Failed to load mentors</div>;
   }
 

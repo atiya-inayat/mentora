@@ -42,7 +42,14 @@ export const getAllMentors = async (req, res) => {
   try {
     // We find all profiles and "join" the User data
     // We only want the 'name' and want to hide 'email' and 'password'
+
     const mentors = await MentorProfile.find().populate("userId", "name role ");
+
+    if (!mentors) {
+      return res
+        .status(404)
+        .json({ success: false, message: "no mentors yet" });
+    }
 
     return res.status(200).json({
       success: true,

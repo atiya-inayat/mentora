@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 export default function MentorCard({ mentor }) {
+  if (!mentor) {
+    return null;
+  }
+
   return (
     <div>
       <h3>{mentor.userId?.name}</h3>
@@ -8,7 +12,12 @@ export default function MentorCard({ mentor }) {
       <p>${mentor.hourlyRate}/hr</p>
       <p>⭐ {mentor.averageRating || "No ratings yet"}</p>
       <p>{mentor.skills?.join(", ")}</p>
-      <Link href={`/mentors/${mentor._id}`}>View Profile</Link>
+
+      {mentor._id ? (
+        <Link href={`/mentors/${mentor._id}`}>View Profile</Link>
+      ) : (
+        <span>Profile Unavailable</span>
+      )}
     </div>
   );
 }
