@@ -14,6 +14,7 @@ import { Server } from "socket.io";
 import { initSocket } from "./src/socket/socketHandler.js";
 import { errorHandler } from "./src/middleware/errorMiddleware.js";
 import { authLimiter, limiter } from "./src/middleware/rateLimiter.js";
+import cookieParser from "cookie-parser";
 
 const app = express(); // creates your express app
 const httpServer = createServer(app);
@@ -37,6 +38,7 @@ app.use(express.json()); // middleware — lets you read JSON request bodies
 
 const PORT = process.env.PORT || 3000; // reads PORT from .env
 
+app.use(cookieParser());
 app.use(limiter);
 app.use("/api/auth", authLimiter, router);
 app.use("/api/mentors", mentorRoutes);

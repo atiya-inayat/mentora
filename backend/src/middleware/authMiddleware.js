@@ -1,52 +1,120 @@
-// 1. client send request with token in header
-// 2. middleware intercepts the request
-// 3. extracts the token
-// 4. verify it with JWT_SECRET
-// 5. if valid - attaches user to request - continue
-// 6. if inavalid - bloacks requests - return 401
+/**
+ * Authentication Middleware
+ * 
+ * Protects routes by verifying the access token cookie
+ * 
+ * Flow:
+ * 1. Extract accessToken from cookies
+ * 2. Verify JWT signature and expiration
+ * 3. Fetch user from database
+ * 4. Attach user to request object
+ * 5. Continue to route handler
+ */
 
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// authentication
+const JWT_SECRET = process.env.JWT_SECRET;
+
+/**
+ * Protect routes - requires valid access token
+ * Verifies accessToken cookie and attaches user to request
+ */
 export const protect = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Get access token from cookies (not Authorization header)
+    const accessToken = req.cookies.accessToken;
 
-    // Check header
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!accessToken) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized user",
+        message: "Not authenticated. Please login.",
+        code: "NO_TOKEN",
       });
     }
 
-    // Extract token
-    const token = authHeader.split(" ")[1];
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.sub); // Use 'sub' here!
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
+    // Verify JWT token
+    let decoded;
+    try {
+      decoded = jwt.verify(accessToken, JWT_SECRET);
+    } catch (err) {
+      // Token expired or invalid
+      return res.status(401).json({
+        success: false,
+        message: "Token expired or invalid",
+        code: "TOKEN_INVALID",
+      });
     }
+
+    // Verify token type is access token
+    if (decoded.type !== "access") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token type",
+        code: "INVALID_TOKEN_TYPE",
+      });
+    }
+
+    // Fetch user from database (exclude password)
+    const user = await User.findById(decoded.sub).select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    // Check if user is blocked
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Account suspended",
+        code: "USER_BLOCKED",
+      });
+    }
+
+    // Attach user to request object
+    // This makes user available in route handlers as req.user
     req.user = user;
 
-    // Move to next middleware/controller
     next();
   } catch (error) {
-    return res.status(401).json({
+    console.error("Auth middleware error:", error);
+    return res.status(500).json({
       success: false,
-      message: "Invalid or expired token",
+      message: "Authentication error",
+      code: "AUTH_ERROR",
     });
   }
 };
 
-// authorization - role based access
+/**
+ * Role-based access control
+ * 
+ * Usage: restrictTo('admin', 'mentor')
+ * 
+ * Checks if authenticated user has required role
+ * Returns 403 if user doesn't have permission
+ */
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
+    // First ensure user is authenticated
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    // Check if user's role is in allowed roles
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ success: false, message: "Access denied" });
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Required roles: ${roles.join(", ")}`,
+        code: "INSUFFICIENT_PERMISSIONS",
+      });
     }
 
     next();

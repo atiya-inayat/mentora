@@ -12,6 +12,7 @@ export const useMyBookings = () => {
       const res = await api.get("/api/bookings/my");
       return res.data;
     },
+    retry: false,
   });
 };
 

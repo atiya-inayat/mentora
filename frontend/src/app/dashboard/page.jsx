@@ -1,5 +1,6 @@
 "use client";
 import { useMyBookings } from "@/lib/hooks/useBookings";
+import Navbar from "../components/shared/Navbar";
 
 export default function MenteeDashboard() {
   const { data, isLoading } = useMyBookings();
@@ -10,6 +11,7 @@ export default function MenteeDashboard() {
 
   return (
     <div>
+      <Navbar />
       <h1>My Bookings</h1>
       {bookings.length === 0 && <p>No bookings yet</p>}
       {bookings.map((booking) => (

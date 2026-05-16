@@ -2,10 +2,27 @@
 
 import useAuthStore from "@/lib/store/authStore";
 import Link from "next/link";
-import React from "react";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 
 const Navbar = () => {
-  const { user, logout } = useAuthStore();
+  const router = useRouter();
+  const { user, logout, isLoading } = useAuthStore();
+
+  // Handle logout with redirect
+  const handleLogout = useCallback(async () => {
+    await logout();
+    router.push("/login");
+  }, [logout, router]);
+
+  // Show loading state while hydrating
+  if (isLoading) {
+    return (
+      <nav className="sticky top-0 z-50 flex flex-row items-center justify-around w-full border border-s-violet-50 bg-slate-100">
+        <div className="p-3">Loading...</div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="sticky top-0 z-50 flex flex-row items-center justify-around w-full border border-s-violet-50 bg-slate-100 ">
@@ -20,46 +37,45 @@ const Navbar = () => {
       <div></div>
 
       <div className="flex gap-5 ">
-        <Link href="/browse-mentors">Browse Mentors</Link>
+        <Link href="/mentors">Browse Mentors</Link>
 
-        <div>
-          {/* Guest */}
-          {!user && (
-            <>
-              <Link href="/login">Login</Link>
-              <Link href="/register">Register</Link>
-            </>
-          )}
-        </div>
+        {/* Guest - show login/register */}
+        {!user && (
+          <>
+            <Link href="/login">Login</Link>
+            <Link href="/register">Register</Link>
+          </>
+        )}
 
-        <div>
-          {/* Mentee */}
-          {user?.role === "mentee" && (
-            <>
-              <Link href="/my-bookings">My Bookings</Link>
-            </>
-          )}
-        </div>
+        {/* Mentee */}
+        {user?.role === "mentee" && (
+          <>
+            <Link href="/my-bookings">My Bookings</Link>
+          </>
+        )}
 
-        <div>
-          {/* Mentor */}
-          {user?.role === "mentor" && (
-            <>
-              <Link href="/my-sessions">My Sessions</Link>
-              <Link href="/dashboard">Dashboard</Link>
-            </>
-          )}
-        </div>
+        {/* Mentor */}
+        {user?.role === "mentor" && (
+          <>
+            <Link href="/my-sessions">My Sessions</Link>
+            <Link href="/mentor/dashboard">Dashboard</Link>
+          </>
+        )}
 
-        <div>
-          {/* Admin */}
-          {user?.role === "admin" && <Link href="/admin">Admin Panel</Link>}
-        </div>
+        {/* Admin */}
+        {user?.role === "admin" && <Link href="/admin/dashboard">Admin Panel</Link>}
       </div>
 
       <div>
         {/* Auth actions */}
-        {user && <button onClick={logout}>Logout</button>}
+        {user && (
+          <button 
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Logout
+          </button>
+        )}
       </div>
     </nav>
   );

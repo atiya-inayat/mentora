@@ -8,6 +8,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "./providers/QueryProvider";
+import AuthProvider from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,7 +59,9 @@ export default function RootLayout({ children }) {
         ${alfa.variable} h-full antialiased`}
     >
       <body className="flex flex-col min-h-full">
-        <QueryProvider>{children}</QueryProvider>
+        <AuthProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </AuthProvider>
       </body>
     </html>
   );
