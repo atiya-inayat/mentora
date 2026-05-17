@@ -6,7 +6,7 @@ export const useMentors = () => {
   return useQuery({
     queryKey: ["mentors"],
     queryFn: async () => {
-      const res = await api.get("/mentors");
+      const res = await api.get("/api/mentors");
       return res.data;
     },
   });
