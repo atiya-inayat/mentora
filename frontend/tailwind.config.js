@@ -22,6 +22,20 @@ module.exports = {
         fugaz: ["var(--font-fugaz)", "sans-serif"],
         alfa: ["var(--font-alfa)", "serif"],
       },
+      animation: {
+        marquee: "marquee 25s linear infinite",
+      },
+
+      keyframes: {
+        marquee: {
+          "0%": {
+            transform: "translateX(100%)",
+          },
+          "100%": {
+            transform: "translateX(-100%)",
+          },
+        },
+      },
     },
   },
   plugins: [],
