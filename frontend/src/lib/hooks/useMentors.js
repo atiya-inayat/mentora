@@ -17,7 +17,7 @@ export const useMentor = (id) => {
   return useQuery({
     queryKey: ["mentors", id],
     queryFn: async () => {
-      const res = await api.get(`/mentors/${id}`);
+      const res = await api.get(`/api/mentors/${id}`);
       return res.data;
     },
     enabled: !!id, // only runs if id exists

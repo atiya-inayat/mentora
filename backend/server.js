@@ -1,7 +1,7 @@
-import "dotenv/config"; // loads .env file first, before anything else
-import express from "express"; // default import — the express framework
-import cors from "cors"; // allows frontend to talk to your backend
-import { connectDB } from "./src/config/db.js"; // named import —  db function
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import { connectDB } from "./src/config/db.js";
 import router from "./src/routes/authRoutes.js";
 import mentorRoutes from "./src/routes/mentorRoutes.js";
 import bookingRoutes from "./src/routes/bookingRoutes.js";
@@ -13,15 +13,22 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { initSocket } from "./src/socket/socketHandler.js";
 import { errorHandler } from "./src/middleware/errorMiddleware.js";
-import { authLimiter, limiter } from "./src/middleware/rateLimiter.js";
+import { limiter, registerLimiterExport } from "./src/middleware/rateLimiter.js";
+import { loginLimiter, createBackoffMiddleware } from "./src/middleware/advancedRateLimiter.js";
+
+const authBackoff = createBackoffMiddleware();
 import cookieParser from "cookie-parser";
 
-const app = express(); // creates your express app
+const app = express();
 const httpServer = createServer(app);
+
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : ["http://localhost:3000"];
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: corsOrigins,
     credentials: true,
   },
 });
@@ -30,17 +37,19 @@ initSocket(io);
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: corsOrigins,
     credentials: true,
-  }),
-); // middleware — enables cross-origin requests
-app.use(express.json()); // middleware — lets you read JSON request bodies
+  })
+);
+app.use(express.json());
 
-const PORT = process.env.PORT || 3000; // reads PORT from .env
+const PORT = process.env.PORT || 3000;
 
 app.use(cookieParser());
 app.use(limiter);
-app.use("/api/auth", authLimiter, router);
+app.use("/api/auth/register", authBackoff, registerLimiterExport);
+app.use("/api/auth/login", authBackoff, loginLimiter);
+app.use("/api/auth", router);
 app.use("/api/mentors", mentorRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);

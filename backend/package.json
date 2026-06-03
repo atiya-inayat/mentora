@@ -4,7 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --watch",
+    "test:coverage": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
@@ -23,5 +25,9 @@
     "mongoose": "^9.3.0",
     "socket.io": "^4.8.3",
     "stripe": "^22.0.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.1.0"
   }
 }

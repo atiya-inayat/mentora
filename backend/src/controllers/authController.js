@@ -1,131 +1,88 @@
-/**
- * Production-Ready Authentication Controller with Token Rotation
- * 
- * Security Features:
- * - Access Token: Short-lived (15 min) for API requests
- * - Refresh Token: Long-lived (7 days) with ROTATION on each use
- * - Token stored in database for tracking and revocation
- * - Token family for grouping tokens from same login session
- * 
- * Rotation Strategy:
- * 1. Each refresh generates NEW refresh token
- * 2. OLD refresh token is invalidated immediately
- * 3. Even if stolen, attacker can only use once
- * 4. Logout invalidates the specific token
- * 5. "Logout everywhere" invalidates ALL tokens
- */
-
 import User from "../models/User.js";
 import RefreshToken from "../models/RefreshToken.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import validatePasswordStrength from "../utils/passwordValidator.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
 
-// Token expiration times (in seconds)
-const ACCESS_TOKEN_EXPIRY = 15 * 60; // 15 minutes
-const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days
+if (!JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET is not defined in environment variables");
+  process.exit(1);
+}
 
-/**
- * Hash a token using SHA-256
- * @param {string} token - Raw token to hash
- * @returns {string} Hashed token
- */
+if (JWT_SECRET === JWT_REFRESH_SECRET) {
+  console.warn("WARNING: JWT_SECRET and JWT_REFRESH_SECRET are the same. Use separate secrets for better security.");
+}
+
+const ACCESS_TOKEN_EXPIRY_SEC = 15 * 60;
+const REFRESH_TOKEN_EXPIRY_SEC = 7 * 24 * 60 * 60;
+const ACCESS_TOKEN_EXPIRY_MS = ACCESS_TOKEN_EXPIRY_SEC * 1000;
+const REFRESH_TOKEN_EXPIRY_MS = REFRESH_TOKEN_EXPIRY_SEC * 1000;
+
 const hashToken = (token) => {
   return crypto.createHash("sha256").update(token).digest("hex");
 };
 
-/**
- * Cookie configuration helper
- * Returns secure cookie options based on environment
- */
 const getCookieOptions = (maxAge) => ({
-  httpOnly: true, // Prevents JavaScript access - protects against XSS
-  secure: process.env.NODE_ENV === "production", // HTTPS only - prevents MITM attacks
-  sameSite: "strict", // CSRF protection - only sent in first-party context
-  path: "/", // Available on all paths
-  maxAge: maxAge, // Expiration in seconds
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production" || process.env.SECURE_COOKIES === "true",
+  sameSite: "strict",
+  path: "/",
+  maxAge: maxAge,
 });
 
-/**
- * Generate a new token family ID
- * Used to group all tokens from the same login session
- * @returns {string} UUID-like token family ID
- */
 const generateTokenFamily = () => {
   return crypto.randomUUID();
 };
 
-/**
- * Generate access and refresh tokens
- * @param {Object} user - User object
- * @param {string} tokenFamily - Token family ID (optional - for new logins)
- * @returns {Object} { accessToken, refreshToken, tokenFamily }
- */
 const generateTokens = (user, tokenFamily = null) => {
-  // Create token family for new logins
   const family = tokenFamily || generateTokenFamily();
 
-  // Access token - short-lived for frequent rotation
   const accessPayload = {
     sub: user._id,
     role: user.role,
     type: "access",
-    family, // Include family in access token for easy identification
+    family,
   };
 
-  // Refresh token - long-lived but ROTATED on each use
   const refreshPayload = {
     sub: user._id,
     type: "refresh",
-    family, // Link to token family
-    jti: crypto.randomUUID(), // Unique ID for this specific token
+    family,
+    jti: crypto.randomUUID(),
   };
 
   const accessToken = jwt.sign(accessPayload, JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
+    expiresIn: ACCESS_TOKEN_EXPIRY_SEC,
   });
 
   const refreshToken = jwt.sign(refreshPayload, JWT_REFRESH_SECRET, {
-    expiresIn: REFRESH_TOKEN_EXPIRY,
+    expiresIn: REFRESH_TOKEN_EXPIRY_SEC,
   });
 
   return { accessToken, refreshToken, tokenFamily: family };
 };
 
-/**
- * Save refresh token to database
- * @param {string} userId - User ID
- * @param {string} token - Refresh token (hashed)
- * @param {string} tokenFamily - Token family ID
- * @param {string} userAgent - Browser user agent
- * @param {string} ipAddress - Client IP address
- */
 const saveRefreshToken = async (userId, token, tokenFamily, userAgent, ipAddress) => {
-  // Hash the token before storing
   const hashedToken = hashToken(token);
 
   await RefreshToken.create({
     userId,
     token: hashedToken,
     tokenFamily,
-    expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY * 1000),
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
     userAgent,
     ipAddress,
   });
 };
 
-/**
- * Verify and validate refresh token
- * @param {string} token - Raw refresh token
- * @returns {Object|null} Decoded token or null if invalid
- */
 const verifyRefreshToken = (token) => {
   try {
     const decoded = jwt.verify(token, JWT_REFRESH_SECRET);
 
-    // Verify it's a refresh token
     if (decoded.type !== "refresh") {
       return null;
     }
@@ -136,42 +93,31 @@ const verifyRefreshToken = (token) => {
   }
 };
 
-/**
- * Rotate refresh token
- * Invalidates old token and creates new one
- * @param {string} oldToken - Current refresh token
- * @param {Object} user - User object
- * @returns {Object} New tokens and family
- */
 const rotateRefreshToken = async (oldToken, user) => {
-  // Verify old token
   const decoded = verifyRefreshToken(oldToken);
   if (!decoded) {
     throw new Error("Invalid refresh token");
   }
 
-  // Hash old token and mark as revoked
   const hashedOldToken = hashToken(oldToken);
-  await RefreshToken.updateOne(
-    { token: hashedOldToken },
-    { isRevoked: true }
+
+  const updatedToken = await RefreshToken.findOneAndUpdate(
+    { token: hashedOldToken, isRevoked: false },
+    { isRevoked: true, revokedAt: new Date() },
+    { returnDocument: "before" }
   );
 
-  // Generate new tokens with same family
+  if (!updatedToken) {
+    throw new Error("TOKEN_ALREADY_ROTATED");
+  }
+
   const { accessToken, refreshToken, tokenFamily } = generateTokens(user, decoded.family);
 
-  // Save new refresh token to database
   await saveRefreshToken(user._id.toString(), refreshToken, tokenFamily);
 
   return { accessToken, refreshToken, tokenFamily };
 };
 
-/**
- * Revoke all refresh tokens for a user
- * Used during logout everywhere
- * @param {string} userId - User ID
- * @param {string} tokenFamily - Optional: only revoke tokens from specific family
- */
 const revokeRefreshTokens = async (userId, tokenFamily = null) => {
   const query = { userId: userId.toString(), isRevoked: false };
 
@@ -179,40 +125,51 @@ const revokeRefreshTokens = async (userId, tokenFamily = null) => {
     query.tokenFamily = tokenFamily;
   }
 
-  await RefreshToken.updateMany(query, { isRevoked: true });
+  await RefreshToken.updateMany(query, { isRevoked: true, revokedAt: new Date() });
 };
 
-/**
- * REGISTER - Create new user account
- */
+const clearAuthCookies = (res) => {
+  const isSecure = process.env.NODE_ENV === "production" || process.env.SECURE_COOKIES === "true";
+  res.clearCookie("accessToken", { path: "/", httpOnly: true, secure: isSecure, sameSite: "strict" });
+  res.clearCookie("refreshToken", { path: "/", httpOnly: true, secure: isSecure, sameSite: "strict" });
+};
+
 export const register = async function (req, res) {
   try {
     const { name, email, password, role } = req.body;
 
-    // Validate required fields
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
+        code: "MISSING_FIELDS",
         message: "Name, email, and password are required",
       });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const passwordCheck = validatePasswordStrength(password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        code: passwordCheck.code,
+        message: passwordCheck.message,
+      });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({
         success: false,
+        code: "USER_EXISTS",
         message: "User with this email already exists",
       });
     }
 
-    // Create new user
-    const newUser = await User.create({ name, email, password, role });
+    const newUser = await User.create({ name, email: normalizedEmail, password, role });
 
-    // Generate tokens with new family
     const { accessToken, refreshToken, tokenFamily } = generateTokens(newUser);
 
-    // Save refresh token to database
     await saveRefreshToken(
       newUser._id.toString(),
       refreshToken,
@@ -221,11 +178,9 @@ export const register = async function (req, res) {
       req.ip
     );
 
-    // Set cookies
-    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY));
-    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY));
+    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
+    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY_MS));
 
-    // Return user data
     return res.status(201).json({
       success: true,
       user: {
@@ -239,57 +194,61 @@ export const register = async function (req, res) {
     console.error("Register error:", error);
     return res.status(500).json({
       success: false,
+      code: "DATABASE_ERROR",
       message: "Internal server error during registration",
     });
   }
 };
 
-/**
- * LOGIN - Authenticate user and create session
- */
 export const login = async function (req, res) {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
+        code: "MISSING_FIELDS",
         message: "Email and password are required",
       });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if (!user) {
+    const user = await User.findOne({ email: normalizedEmail });
+
+    const dummyHash = "$2b$10$t4R7jpilfYld29Z8enlMmuRzbfSgLcBNBlkJRpJoUuTMfQOe59BzG";
+
+    let isMatch = false;
+    if (user) {
+      isMatch = await user.comparePassword(password);
+    } else {
+      try {
+        await bcrypt.compare(password, dummyHash);
+      } catch {
+      }
+    }
+
+    if (!user || !isMatch) {
       return res.status(401).json({
         success: false,
+        code: "INVALID_CREDENTIALS",
         message: "Invalid email or password",
       });
     }
 
-    // Verify password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    // Check if user is blocked
     if (user.isBlocked) {
+      await revokeRefreshTokens(user._id.toString());
+      clearAuthCookies(res);
+
       return res.status(403).json({
         success: false,
+        code: "USER_BLOCKED",
         message: "Your account has been suspended. Contact support.",
       });
     }
 
-    // Generate tokens with new family
     const { accessToken, refreshToken, tokenFamily } = generateTokens(user);
 
-    // Save refresh token to database for tracking/rotation
     await saveRefreshToken(
       user._id.toString(),
       refreshToken,
@@ -298,11 +257,9 @@ export const login = async function (req, res) {
       req.ip
     );
 
-    // Set cookies
-    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY));
-    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY));
+    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
+    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY_MS));
 
-    // Return user data
     return res.status(200).json({
       success: true,
       user: {
@@ -316,201 +273,184 @@ export const login = async function (req, res) {
     console.error("Login error:", error);
     return res.status(500).json({
       success: false,
+      code: "DATABASE_ERROR",
       message: "Internal server error during login",
     });
   }
 };
 
-/**
- * LOGOUT - Clear cookies and end session
- */
 export const logout = async function (req, res) {
   try {
-    // Get refresh token to revoke it specifically
     const refreshTokenValue = req.cookies.refreshToken;
 
     if (refreshTokenValue) {
-      // Hash and revoke this specific token
       const hashedToken = hashToken(refreshTokenValue);
       await RefreshToken.updateOne(
         { token: hashedToken },
-        { isRevoked: true }
+        { isRevoked: true, revokedAt: new Date() }
       );
     }
 
-    // Clear the cookies
-    res.clearCookie("accessToken", {
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
-
-    res.clearCookie("refreshToken", {
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    clearAuthCookies(res);
 
     return res.status(200).json({
       success: true,
+      code: "LOGGED_OUT",
       message: "Logged out successfully",
     });
   } catch (error) {
     console.error("Logout error:", error);
     return res.status(500).json({
       success: false,
+      code: "DATABASE_ERROR",
       message: "Error during logout",
     });
   }
 };
 
-/**
- * REFRESH - Get new access token with token rotation
- * 
- * CRITICAL: This rotates the refresh token!
- * - Old refresh token is invalidated
- * - New refresh token is issued
- * - This limits damage if token is stolen (attacker can only use once)
- */
 export const refreshToken = async function (req, res) {
   try {
-    // Get refresh token from cookies
     const refreshTokenValue = req.cookies.refreshToken;
 
     if (!refreshTokenValue) {
       return res.status(401).json({
         success: false,
+        code: "NO_REFRESH_TOKEN",
         message: "Refresh token not found. Please login again.",
       });
     }
 
-    // Verify refresh token
     const decoded = verifyRefreshToken(refreshTokenValue);
     if (!decoded) {
       return res.status(401).json({
         success: false,
+        code: "INVALID_REFRESH_TOKEN",
         message: "Invalid or expired refresh token. Please login again.",
       });
     }
 
-    // Check if token is revoked in database
     const hashedToken = hashToken(refreshTokenValue);
     const storedToken = await RefreshToken.findOne({ token: hashedToken });
 
     if (!storedToken || storedToken.isRevoked) {
-      // Token was already used or revoked - possible theft attempt
-      // Revoke ALL tokens for this user (security measure)
       if (decoded.sub) {
         await revokeRefreshTokens(decoded.sub, decoded.family);
       }
 
+      clearAuthCookies(res);
+
       return res.status(401).json({
         success: false,
-        message: "Token already used. Please login again.",
         code: "TOKEN_REVOKED",
+        message: "Token already used. Please login again.",
       });
     }
 
-    // Find user
     const user = await User.findById(decoded.sub);
 
     if (!user) {
+      clearAuthCookies(res);
+
       return res.status(401).json({
         success: false,
+        code: "USER_NOT_FOUND",
         message: "User not found. Please login again.",
       });
     }
 
-    // Check if user is blocked
     if (user.isBlocked) {
+      await revokeRefreshTokens(user._id.toString());
+      clearAuthCookies(res);
+
       return res.status(403).json({
         success: false,
+        code: "USER_BLOCKED",
         message: "Account suspended",
       });
     }
 
-    // ROTATE THE TOKEN
-    // This invalidates the old token and creates a new one
-    // Even if attacker stole the token, they can only use it once!
     const { accessToken, refreshToken: newRefreshToken } = await rotateRefreshToken(
       refreshTokenValue,
       user
     );
 
-    // Set new cookies
-    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY));
-    res.cookie("refreshToken", newRefreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY));
+    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
+    res.cookie("refreshToken", newRefreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY_MS));
 
-    // Return success
     return res.status(200).json({
       success: true,
+      code: "TOKEN_ROTATED",
       message: "Token refreshed successfully (rotated)",
     });
   } catch (error) {
+    if (error.message === "TOKEN_ALREADY_ROTATED") {
+      clearAuthCookies(res);
+
+      return res.status(401).json({
+        success: false,
+        code: "TOKEN_ROTATION_ERROR",
+        message: "Token already rotated. Please login again.",
+      });
+    }
+
     console.error("Refresh token error:", error);
     return res.status(500).json({
       success: false,
+      code: "JWT_ERROR",
       message: "Error refreshing token",
     });
   }
 };
 
-/**
- * ME - Get current user info (session hydration)
- */
 export const getMe = async function (req, res) {
   try {
-    // Get access token from cookies
     const accessToken = req.cookies.accessToken;
 
     if (!accessToken) {
       return res.status(401).json({
         success: false,
+        code: "NO_TOKEN",
         message: "Not authenticated",
       });
     }
 
-    // Verify access token
     let decoded;
     try {
       decoded = jwt.verify(accessToken, JWT_SECRET);
     } catch (err) {
       return res.status(401).json({
         success: false,
-        message: "Token expired",
         code: "TOKEN_EXPIRED",
+        message: "Token expired",
       });
     }
 
-    // Verify token type
     if (decoded.type !== "access") {
       return res.status(401).json({
         success: false,
+        code: "INVALID_TOKEN_TYPE",
         message: "Invalid token type",
       });
     }
 
-    // Fetch user from database
     const user = await User.findById(decoded.sub).select("-password");
 
     if (!user) {
       return res.status(401).json({
         success: false,
+        code: "USER_NOT_FOUND",
         message: "User not found",
       });
     }
 
-    // Check if blocked
     if (user.isBlocked) {
       return res.status(403).json({
         success: false,
+        code: "USER_BLOCKED",
         message: "Account suspended",
       });
     }
 
-    // Return user data
     return res.status(200).json({
       success: true,
       user: {
@@ -524,19 +464,16 @@ export const getMe = async function (req, res) {
     console.error("Getme error:", error);
     return res.status(500).json({
       success: false,
+      code: "DATABASE_ERROR",
       message: "Error fetching user",
     });
   }
 };
 
-/**
- * Get user's active sessions (for security awareness)
- */
 export const getSessions = async function (req, res) {
   try {
     const userId = req.user._id.toString();
 
-    // Get all non-revoked tokens for this user
     const tokens = await RefreshToken.find({
       userId,
       isRevoked: false,
@@ -546,7 +483,6 @@ export const getSessions = async function (req, res) {
       .sort({ createdAt: -1 })
       .limit(10);
 
-    // Return session info (without revealing actual tokens)
     return res.status(200).json({
       success: true,
       sessions: tokens.map((t) => ({
@@ -561,33 +497,30 @@ export const getSessions = async function (req, res) {
     console.error("Get sessions error:", error);
     return res.status(500).json({
       success: false,
+      code: "DATABASE_ERROR",
       message: "Error fetching sessions",
     });
   }
 };
 
-/**
- * Revoke all sessions (logout everywhere)
- */
 export const revokeAllSessions = async function (req, res) {
   try {
     const userId = req.user._id.toString();
 
-    // Revoke ALL tokens for this user
     await revokeRefreshTokens(userId);
 
-    // Clear current cookies
-    res.clearCookie("accessToken", { path: "/", httpOnly: true, secure: true, sameSite: "strict" });
-    res.clearCookie("refreshToken", { path: "/", httpOnly: true, secure: true, sameSite: "strict" });
+    clearAuthCookies(res);
 
     return res.status(200).json({
       success: true,
+      code: "SESSIONS_REVOKED",
       message: "All sessions revoked. Please login again.",
     });
   } catch (error) {
     console.error("Revoke sessions error:", error);
     return res.status(500).json({
       success: false,
+      code: "DATABASE_ERROR",
       message: "Error revoking sessions",
     });
   }

@@ -35,27 +35,86 @@ export default function LoginPage() {
   });
 
   // Submit Handler
+  // const onSubmit = async (data) => {
+  //   try {
+  //     const result = await login(data);
+
+  //     if (result.success) {
+  //       const roleRoutes = {
+  //         admin: "/admin/dashboard",
+  //         mentee: "/dashboard",
+  //         mentor: "/mentor/dashboard",
+  //       };
+
+  //       router.push(roleRoutes[result.user?.role] || redirectTo);
+  //     }
+  //   } catch (error) {
+  //     const message =
+  //       error?.response?.data?.message || "Login failed. Please try again.";
+
+  //     setError("root", { message });
+  //   }
+  // };
+  // const onSubmit = async (data) => {
+  //   try {
+  //     const result = await login(data);
+
+  //     // 🔍 Quick debug check to see what your auth store actually outputs
+  //     console.log("Login Store Result:", result);
+
+  //     if (result.success) {
+  //       const roleRoutes = {
+  //         admin: "/admin/dashboard",
+  //         mentee: "/dashboard",
+  //         mentor: "/mentor/dashboard",
+  //       };
+
+  //       // 1. First, check if there is an explicit URL parameter redirect
+  //       // 2. Second, try the user's role-based dashboard
+  //       // 3. Fallback to a safe hardcoded path
+  //       const targetDestination =
+  //         searchParams.get("redirect") ||
+  //         roleRoutes[result?.user?.role] ||
+  //         roleRoutes[result?.data?.user?.role] || // Check if nested in .data
+  //         "/dashboard";
+
+  //       router.push(targetDestination);
+  //       router.refresh(); // Forces Next.js to re-evaluate auth tokens/cookies
+  //     }
+  //   } catch (error) {
+  //     const message =
+  //       error?.response?.data?.message || "Login failed. Please try again.";
+  //     setError("root", { message });
+  //   }
+  // };
   const onSubmit = async (data) => {
     try {
       const result = await login(data);
 
-      if (result.success) {
+      if (result?.success) {
         const roleRoutes = {
           admin: "/admin/dashboard",
           mentee: "/dashboard",
           mentor: "/mentor/dashboard",
         };
 
-        router.push(roleRoutes[result.user?.role] || redirectTo);
+        // 1. Determine where they are supposed to go
+        const targetDestination =
+          searchParams.get("redirect") ||
+          roleRoutes[result.user?.role] ||
+          "/dashboard";
+
+        // 2. Give cross-origin cookies (Port 5000 -> Port 3000) a split second to save
+        setTimeout(() => {
+          window.location.href = targetDestination;
+        }, 300);
       }
     } catch (error) {
       const message =
         error?.response?.data?.message || "Login failed. Please try again.";
-
       setError("root", { message });
     }
   };
-
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-white">
       <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-surface border-primary/20">

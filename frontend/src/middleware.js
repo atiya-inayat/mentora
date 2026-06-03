@@ -1,14 +1,14 @@
 /**
  * Production-Ready Next.js Middleware
- * 
+ *
  * Handles authentication and authorization at the edge
- * 
+ *
  * Features:
  * - Route protection based on auth status
  * - Role-based redirects
  * - Clean scalable route matching
  * - No token manipulation - uses cookies only
- * 
+ *
  * How it works:
  * 1. Checks for accessToken cookie
  * 2. Protected routes: require valid token
@@ -40,7 +40,7 @@ const ROLE_DASHBOARDS = {
  * Get redirect URL based on user role
  * Note: In production, you'd decode the JWT to get the role
  * For now, we use a simple redirect to the main dashboard
- * 
+ *
  * @param {string} pathname - Current URL path
  * @returns {string} Dashboard URL based on role
  */
@@ -48,7 +48,7 @@ const getRoleBasedRedirect = (pathname) => {
   // Simple approach: redirect to main dashboard
   // In production, you'd decode the JWT token to get the role
   // and return the appropriate dashboard path
-  
+
   if (pathname.startsWith("/admin")) {
     return "/admin/dashboard";
   }
@@ -90,7 +90,7 @@ const isAuthRedirectRoute = (pathname) => {
 export async function middleware(request) {
   // Get access token from cookies
   const token = getToken(request.cookies);
-  
+
   // Get current pathname
   const { pathname } = request.nextUrl;
 
@@ -114,7 +114,7 @@ export async function middleware(request) {
     // Save the intended destination to redirect back after login
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    
+
     return NextResponse.redirect(loginUrl);
   }
 
@@ -134,16 +134,36 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon)
-     * - public files
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
+    // Match user dashboard routes
+    "/dashboard/:path*",
+    "/my-bookings/:path*",
+    "/my-sessions/:path*",
+    // Match mentor routes explicitly
+    "/mentor/dashboard/:path*",
+    "/mentor/:path*",
+    // Match admin routes explicitly
+    "/admin/dashboard/:path*",
+    "/admin/:path*",
+    // Match auth routes
+    "/login",
+    "/register",
+    // Match settings
+    "/settings/:path*",
   ],
 };
+
+// export const config = {
+//   matcher: [
+//     /*
+//      * Match all request paths except:
+//      * - _next/static (static files)
+//      * - _next/image (image optimization files)
+//      * - favicon.ico (favicon)
+//      * - public files
+//      */
+//     "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
+//   ],
+// };
 
 /**
  * ALTERNATIVE: More specific matcher for common routes
