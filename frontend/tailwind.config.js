@@ -9,9 +9,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#D2DCB6",
-        surface: "#A1BC98",
-        primary: "#778873",
+        background: "#F7F9FA",
+        surface: "#E9EDF0",
+        primary: "#0D7377",
+        primaryHover: "#0A5D61",
+        text: "#1F2937",
+        success: "#16A34A",
       },
 
       fontFamily: {
