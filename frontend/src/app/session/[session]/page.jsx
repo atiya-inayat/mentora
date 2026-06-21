@@ -1,57 +1,89 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
-import { useSession } from "@/lib/hooks/useSession";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useSession, useEndSession } from "@/lib/hooks/useSession";
+import useAuthStore from "@/lib/store/authStore";
+import Navbar from "@/app/components/shared/Navbar";
+import VideoCall from "@/app/components/session/VideoCall";
+import SessionTimeBanner from "@/app/components/session/SessionTimeBanner";
+import api from "@/lib/axios";
+import {
+  Send, MessageSquare, StopCircle, CalendarClock, X,
+} from "lucide-react";
 
-export default function SessionChatPage() {
+export default function SessionPage() {
   const { sessionId } = useParams();
-
-  const { user } = useAuth();
+  const { user } = useAuthStore();
+  const router = useRouter();
   const { data: sessionData, isLoading } = useSession(sessionId);
+  const { mutate: endSession, isPending: ending } = useEndSession();
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [showChat, setShowChat] = useState(false);
+  const [showPostpone, setShowPostpone] = useState(false);
+  const [newDate, setNewDate] = useState("");
+  const [postponing, setPostponing] = useState(false);
+  const [error, setError] = useState("");
 
   const socketRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  // booking participants
-  const mentorId = sessionData?.bookingId?.mentorId;
-  const menteeId = sessionData?.bookingId?.menteeId;
+  const session = sessionData?.data;
+  const mentorId = session?.bookingId?.mentorId?._id;
+  const menteeId = session?.bookingId?.menteeId?._id;
+  const isMentor = user?.id === mentorId;
+  const receiverId = isMentor ? menteeId : mentorId;
+  const isOngoing = session?.status === "ongoing";
+  const timeStatus = session?.timeStatus || "upcoming";
+  const scheduledAt = session?.scheduledAt;
 
-  // determine who the other user is
-  const receiverId = user?.sub === mentorId ? menteeId : mentorId;
+  const canVideoCall = isOngoing && timeStatus === "active";
+  const canChat = isOngoing && timeStatus === "active";
 
   useEffect(() => {
     if (!sessionId) return;
 
-    // Connect and join session room
     const socket = connectSocket();
     socketRef.current = socket;
 
     socket.emit("join_session", { sessionId });
 
-    // Listen for incoming messages
+    socket.on("session_messages", (msgs) => {
+      setMessages(msgs);
+    });
+
     socket.on("receive_message", (message) => {
       setMessages((prev) => [...prev, message]);
     });
 
-    socket.on("error", ({ message }) => {
-      console.error("Socket error:", message);
+    socket.on("session_ended", () => {
+      setError("Session has ended. Redirecting...");
+      setTimeout(() => router.push("/my-sessions"), 2000);
     });
 
-    // Cleanup on unmount
+    socket.on("error", ({ message }) => {
+      setError(message);
+      setTimeout(() => setError(""), 5000);
+    });
+
     return () => {
+      socket.off("session_messages");
       socket.off("receive_message");
+      socket.off("session_ended");
       socket.off("error");
       disconnectSocket();
     };
-  }, [sessionId]);
+  }, [sessionId, router]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !socketRef.current) return;
 
     socketRef.current.emit("send_message", {
       sessionId,
@@ -59,37 +91,265 @@ export default function SessionChatPage() {
       receiverId,
     });
 
+    setMessages((prev) => [
+      ...prev,
+      { content: input, senderId: user?.id, createdAt: new Date() },
+    ]);
+
     setInput("");
   };
 
+  const handlePostpone = async () => {
+    if (!newDate) return;
+    setPostponing(true);
+    try {
+      await api.put(`/api/sessions/${session?.bookingId?._id}/postpone`, {
+        newScheduledAt: newDate,
+      });
+      router.push("/my-sessions");
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to postpone session");
+    } finally {
+      setPostponing(false);
+    }
+  };
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background text-primary">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh] text-primary/60">
+          <p>Session not found.</p>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <div>
-      <h1>Session Chat</h1>
+    <main className="min-h-screen bg-background">
+      <Navbar />
 
-      <div>
-        {messages.map((msg, i) => (
-          <div key={i}>
-            <p>{msg.content}</p>
-
-            <small>{new Date(msg.createdAt).toLocaleTimeString()}</small>
+      <div className="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-6 h-6 text-primary" />
+            <div>
+              <h1 className="text-2xl font-semibold text-primary font-fugaz">
+                Session
+              </h1>
+              {session?.bookingId?.mentorId?.name && (
+                <p className="text-sm text-primary/70">
+                  {isMentor
+                    ? `With ${session.bookingId.menteeId?.name || "Mentee"}`
+                    : `With ${session.bookingId.mentorId?.name || "Mentor"}`}
+                </p>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
 
-      <div>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder="Type a message..."
+          <div className="flex items-center gap-2">
+            {canChat && (
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full ${
+                  showChat
+                    ? "bg-primary text-background"
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                {showChat ? "Hide Chat" : "Chat"}
+              </button>
+            )}
+
+            {isMentor && isOngoing && (
+              <>
+                <button
+                  onClick={() => setShowPostpone(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200"
+                >
+                  <CalendarClock className="w-4 h-4" />
+                  Postpone
+                </button>
+                <button
+                  onClick={() =>
+                    endSession(session?.bookingId?._id, {
+                      onSuccess: () => router.push("/my-sessions"),
+                    })
+                  }
+                  disabled={ending}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full bg-red-100 text-red-600 hover:bg-red-200 disabled:opacity-50"
+                >
+                  <StopCircle className="w-4 h-4" />
+                  {ending ? "Ending..." : "End Session"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <SessionTimeBanner
+          timeStatus={timeStatus}
+          scheduledAt={scheduledAt}
+          timeRemaining={session?.timeRemaining}
+          readyToStartIn={session?.readyToStartIn}
         />
 
-        <button onClick={sendMessage}>Send</button>
+        {error && (
+          <div className="p-3 mt-3 mb-3 text-sm text-red-600 bg-red-100 rounded-xl">
+            {error}
+          </div>
+        )}
+
+        {showPostpone && (
+          <div className="p-6 mb-4 border shadow-lg rounded-2xl bg-surface border-primary/20">
+            <h3 className="mb-3 text-sm font-semibold text-primary">Reschedule Session</h3>
+            <div className="flex items-center gap-3">
+              <input
+                type="datetime-local"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="flex-1 px-3 py-2 text-sm border rounded-lg outline-none bg-background border-primary/20 focus:border-primary text-primary"
+              />
+              <button
+                onClick={handlePostpone}
+                disabled={postponing || !newDate}
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-background hover:opacity-90 disabled:opacity-50"
+              >
+                {postponing ? "Saving..." : "Confirm"}
+              </button>
+              <button
+                onClick={() => setShowPostpone(false)}
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-background text-primary border border-primary/20 hover:bg-primary/10"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="relative flex gap-4">
+          <div className={`transition-all duration-300 ${showChat ? "w-[65%]" : "w-full"}`}>
+            <div className="h-[70vh] rounded-2xl overflow-hidden border border-primary/20 shadow-lg">
+              {canVideoCall ? (
+                <VideoCall
+                  socketRef={socketRef}
+                  sessionId={sessionId}
+                  isMentor={isMentor}
+                  onCallEnded={() => {}}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center w-full h-full bg-gray-900 text-white/70">
+                  <MessageSquare className="w-16 h-16 mb-4 opacity-30" />
+                  {timeStatus === "upcoming" && (
+                    <>
+                      <p className="text-lg">Waiting for session time...</p>
+                      <p className="mt-1 text-sm opacity-50">
+                        Video and chat will be available at the scheduled time
+                      </p>
+                    </>
+                  )}
+                  {timeStatus === "ready_to_start" && (
+                    <>
+                      <p className="text-lg">Session ready to start</p>
+                      <p className="mt-1 text-sm opacity-50">
+                        Video and chat will activate once the session begins
+                      </p>
+                    </>
+                  )}
+                  {(timeStatus === "expired" || timeStatus === "completed") && (
+                    <>
+                      <p className="text-lg">Session has ended</p>
+                      <p className="mt-1 text-sm opacity-50">
+                        This session is no longer available
+                      </p>
+                    </>
+                  )}
+                  {timeStatus === "active" && !isOngoing && (
+                    <>
+                      <p className="text-lg">Session not started</p>
+                      <p className="mt-1 text-sm opacity-50">
+                        Please wait for the mentor to start the session
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {showChat && canChat && (
+            <div className="w-[35%] h-[70vh] flex flex-col border shadow-lg rounded-2xl bg-surface border-primary/20">
+              <div className="flex items-center justify-between p-4 border-b border-primary/10">
+                <h3 className="text-sm font-semibold text-primary">Messages</h3>
+                <button onClick={() => setShowChat(false)} className="text-primary/50 hover:text-primary">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 p-4 overflow-y-auto space-y-3">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center text-primary/40">
+                    <MessageSquare className="w-8 h-8 mb-2" />
+                    <p className="text-sm">No messages yet</p>
+                  </div>
+                ) : (
+                  messages.map((msg, i) => {
+                    const isMine = msg.senderId === user?.id;
+                    return (
+                      <div
+                        key={msg._id || i}
+                        className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] p-3 rounded-2xl ${
+                            isMine
+                              ? "bg-primary text-background rounded-br-md"
+                              : "bg-background text-primary rounded-bl-md"
+                          }`}
+                        >
+                          <p className="text-sm leading-5">{msg.content}</p>
+                          <p className={`mt-1 text-[10px] ${isMine ? "text-background/60" : "text-primary/40"}`}>
+                            {new Date(msg.createdAt).toLocaleTimeString("en-US", {
+                              hour: "2-digit", minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="flex items-center gap-2 p-3 border-t bg-background rounded-b-2xl border-primary/10">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  placeholder="Type a message..."
+                  className="flex-1 px-3 py-2 text-sm border outline-none rounded-xl bg-surface border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary text-primary placeholder:text-primary/50"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim()}
+                  className="p-2 transition-colors rounded-xl bg-primary text-background hover:opacity-90 disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
