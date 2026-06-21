@@ -3,28 +3,30 @@
 import stripe from "../config/stripe.js";
 
 export const createPaymentIntent = async (
-  amount, // mentor's hourly rate in dollars
-  mentorStripeId, // mentor's Stripe Connect account ID
+  amount,
+  mentorStripeId,
   bookingId,
 ) => {
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amount * 100, // convert dollars to cents
+  const intentParams = {
+    amount: amount * 100,
     currency: "usd",
     payment_method_types: ["card"],
-
-    // This tells Stripe where the money goes
-    transfer_data: {
-      destination: mentorStripeId,
-    },
-
-    // Mentora keeps 10%
-    application_fee_amount: Math.round(amount * 100 * 0.1),
     metadata: {
       bookingId: bookingId.toString(),
     },
-  });
+  };
 
-  // clientSecret goes to frontend so mentee can confirm payment
+  // If mentor has a Stripe Connect account, send funds directly to them
+  // Mentora keeps 10% as platform fee
+  if (mentorStripeId) {
+    intentParams.transfer_data = {
+      destination: mentorStripeId,
+    };
+    intentParams.application_fee_amount = Math.round(amount * 100 * 0.1);
+  }
+
+  const paymentIntent = await stripe.paymentIntents.create(intentParams);
+
   return {
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,

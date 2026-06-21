@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  confirmPayment,
   initiatePayment,
   handleWebhook,
 } from "../controllers/paymentController.js";
@@ -20,6 +21,14 @@ router.post(
   protect,
   restrictTo("mentee"),
   initiatePayment,
+);
+
+// Confirm payment after Stripe success (no webhook needed for dev)
+router.post(
+  "/confirm/:bookingId",
+  protect,
+  restrictTo("mentee"),
+  confirmPayment,
 );
 
 export default router;

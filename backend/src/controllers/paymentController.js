@@ -8,7 +8,7 @@ import stripe from "../config/stripe.js";
 export const initiatePayment = async (req, res) => {
   try {
     const { bookingId } = req.params;
-    const menteeId = req.user.sub;
+    const menteeId = req.user._id;
 
     // Step 1: Validate ID format
     if (!mongoose.Types.ObjectId.isValid(bookingId)) {
@@ -29,7 +29,7 @@ export const initiatePayment = async (req, res) => {
 
     // Step 3: Verify this mentee owns this booking
     // Why? So mentee A can't pay for mentee B's booking
-    if (booking.menteeId.toString() !== menteeId) {
+    if (booking.menteeId.toString() !== menteeId.toString()) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized",
@@ -46,9 +46,21 @@ export const initiatePayment = async (req, res) => {
     }
 
     // Step 5: Get mentor's hourly rate and Stripe account
-    const mentorProfile = await MentorProfile.findOne({
+    // Handle both old (MentorProfile._id) and new (User._id) booking formats
+    let mentorProfile = await MentorProfile.findOne({
       userId: booking.mentorId,
     });
+
+    if (!mentorProfile) {
+      mentorProfile = await MentorProfile.findById(booking.mentorId);
+    }
+
+    if (!mentorProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Mentor profile not found",
+      });
+    }
 
     // Step 6: Create Stripe PaymentIntent
     const { clientSecret, paymentIntentId } = await createPaymentIntent(
@@ -76,6 +88,50 @@ export const initiatePayment = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+export const confirmPayment = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const menteeId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    if (booking.menteeId.toString() !== menteeId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (booking.status !== "accepted") {
+      return res.status(400).json({ success: false, message: "Booking must be accepted" });
+    }
+
+    // Check if payment already exists
+    const existingPayment = await Payment.findOne({ bookingId });
+    if (existingPayment && existingPayment.status === "paid") {
+      return res.status(200).json({ success: true, message: "Already paid" });
+    }
+
+    // Update booking status
+    booking.status = "payment_held";
+    await booking.save();
+
+    // Update or create payment record
+    if (existingPayment) {
+      existingPayment.status = "paid";
+      await existingPayment.save();
+    }
+
+    return res.status(200).json({ success: true, message: "Payment confirmed" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

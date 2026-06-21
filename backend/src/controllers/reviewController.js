@@ -6,7 +6,7 @@ import MentorProfile from "../models/MentorProfile.js";
 export const creatReview = async (req, res) => {
   try {
     const { bookingId } = req.params;
-    const menteeId = req.user.sub;
+    const menteeId = req.user._id;
 
     const { comment, rating } = req.body;
 

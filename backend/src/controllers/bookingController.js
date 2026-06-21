@@ -1,10 +1,35 @@
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import MentorProfile from "../models/MentorProfile.js";
+import Session from "../models/Session.js";
+
+const FIFTEEN_MIN_MS = 15 * 60 * 1000;
+const SESSION_DURATION_MS = 60 * 60 * 1000;
+
+const computeBookingTimeStatus = (booking, session) => {
+  const now = new Date();
+  const scheduledAt = new Date(booking.scheduledAt);
+  const expiresAt = new Date(scheduledAt.getTime() + SESSION_DURATION_MS);
+
+  if (session) {
+    if (session.status === "completed") return "completed";
+    if (session.status === "expired") return "expired";
+    if (session.status === "ongoing") {
+      if (now >= scheduledAt && now <= expiresAt) return "active";
+      return "active";
+    }
+  }
+
+  if (booking.status === "completed") return "completed";
+  if (now > expiresAt) return "expired";
+  if (now >= scheduledAt) return "ready_to_start";
+  if (now >= scheduledAt.getTime() - FIFTEEN_MIN_MS) return "ready_to_start";
+  return "upcoming";
+};
 
 export const createBooking = async (req, res) => {
   try {
-    const menteeId = req.user.sub;
+    const menteeId = req.user._id;
     const { mentorId } = req.params;
     const { scheduledAt } = req.body;
 
@@ -22,8 +47,7 @@ export const createBooking = async (req, res) => {
         .json({ success: false, message: "Mentor not found" });
     }
 
-    // prevent self booking
-    if (mentorProfile.userId.toString() === menteeId) {
+    if (mentorProfile.userId.toString() === menteeId.toString()) {
       return res
         .status(400)
         .json({ success: false, message: "you cannot book yourself" });
@@ -31,7 +55,7 @@ export const createBooking = async (req, res) => {
 
     const newBooking = await Booking.create({
       menteeId,
-      mentorId,
+      mentorId: mentorProfile.userId,
       status: "pending",
       scheduledAt,
     });
@@ -45,7 +69,7 @@ export const createBooking = async (req, res) => {
 export const acceptBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const mentorUserId = req.user.sub;
+    const mentorUserId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -62,8 +86,14 @@ export const acceptBooking = async (req, res) => {
         .json({ success: false, message: "Booking not available" });
     }
 
-    // Authorization check
-    if (existingBooking.mentorId.toString() !== mentorUserId) {
+    const mentorProfile = await MentorProfile.findOne({ userId: mentorUserId });
+
+    const isAuthorized =
+      existingBooking.mentorId.toString() === mentorUserId.toString() ||
+      (mentorProfile &&
+        existingBooking.mentorId.toString() === mentorProfile._id.toString());
+
+    if (!isAuthorized) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized to accept this booking",
@@ -91,18 +121,53 @@ export const acceptBooking = async (req, res) => {
 
 export const getMyBookings = async (req, res) => {
   try {
-    const userId = req.user.sub;
+    const userId = req.user._id;
     const role = req.user.role;
 
-    const filter =
-      role === "mentor" ? { mentorId: userId } : { menteeId: userId };
+    let filter;
+    if (role === "mentor") {
+      const mentorProfile = await MentorProfile.findOne({ userId });
+      filter = mentorProfile
+        ? { $or: [{ mentorId: userId }, { mentorId: mentorProfile._id }] }
+        : { mentorId: userId };
+    } else {
+      filter = { menteeId: userId };
+    }
 
     const bookings = await Booking.find(filter)
       .populate("mentorId", "name email")
       .populate("menteeId", "name email")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, data: bookings });
+    const bookingIds = bookings.map((b) => b._id);
+    const sessions = await Session.find({ bookingId: { $in: bookingIds } });
+    const sessionMap = {};
+    for (const s of sessions) {
+      sessionMap[s.bookingId.toString()] = s;
+    }
+
+    const enriched = bookings.map((booking) => {
+      const bookingObj = booking.toObject();
+      const session = sessionMap[booking._id.toString()];
+      const timeStatus = computeBookingTimeStatus(booking, session);
+
+      return {
+        ...bookingObj,
+        session: session
+          ? {
+              _id: session._id,
+              status: session.status,
+              scheduledAt: session.scheduledAt,
+              expiresAt: session.expiresAt,
+              startTime: session.startTime,
+              endTime: session.endTime,
+            }
+          : null,
+        timeStatus,
+      };
+    });
+
+    return res.status(200).json({ success: true, data: enriched });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

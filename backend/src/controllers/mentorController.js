@@ -7,7 +7,7 @@ export const createMentorProfile = async (req, res) => {
 
     // ✓ Corrected to findOne for field searching
     const existingProfile = await MentorProfile.findOne({
-      userId: req.user.sub,
+      userId: req.user._id,
     });
 
     if (existingProfile) {
@@ -18,7 +18,7 @@ export const createMentorProfile = async (req, res) => {
     }
 
     const newProfile = await MentorProfile.create({
-      userId: req.user.sub,
+      userId: req.user._id,
       bio,
       hourlyRate,
       skills,
@@ -38,6 +38,20 @@ export const createMentorProfile = async (req, res) => {
   }
 };
 
+export const getMyProfile = async (req, res) => {
+  try {
+    const profile = await MentorProfile.findOne({ userId: req.user._id }).populate("userId", "name role");
+
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "No mentor profile found" });
+    }
+
+    return res.status(200).json({ success: true, data: profile });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getAllMentors = async (req, res) => {
   try {
     // We find all profiles and "join" the User data
@@ -45,7 +59,7 @@ export const getAllMentors = async (req, res) => {
 
     const mentors = await MentorProfile.find().populate("userId", "name role ");
 
-    if (!mentors) {
+    if (!mentors || mentors.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "no mentors yet" });
