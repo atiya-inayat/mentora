@@ -1,59 +1,3 @@
-// import Link from "next/link";
-
-// const Footer = () => {
-//   return (
-//     <div className="flex justify-center w-full bg-primary">
-//       <div className="flex flex-col justify-center p-3 pt-4 border bg-primary/90">
-//         <h2 className="mt-3 text-xl font-bold font-fugaz">Mentora</h2>
-//         <p className="">
-//           Your trusted source to find highly-vetted <br />
-//           mentors & industry professionals to move your career ahead.
-//         </p>
-//         <h3>Contact</h3>
-//         <span>facebook</span>
-//         <span>Instagram</span>
-//         <span>X</span>
-//         <span>LInkedIn</span>
-//         <span>Youtube</span>
-//       </div>
-
-//       {/* platform */}
-//       <div>
-//         <h3>Platform</h3>
-//         <p>Browser Mentors</p>
-//         <p>Book a Session</p>
-//         <p>Become a Mentor</p>
-//         <p>Mentorship for Teams</p>
-//         <p>Testimonials</p>
-//       </div>
-
-//       {/* Company */}
-//       <div>
-//         <h3>Company</h3>
-//         <p>Case Studies</p>
-//         <p>Partner Program</p>
-//         <p>Code of Conduct</p>
-//         <p>Privacy Policy</p>
-//         <p>DMCA</p>
-//       </div>
-
-//       {/* Explore */}
-//       <div>
-//         <p>Fractional Executives</p>
-//         <p>Services & Training</p>
-//         <p>Part-Time Experts</p>
-//       </div>
-//       {/* support */}
-//       <div>
-//         <p>FAQ</p>
-//         <p>Contact</p>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Footer;
-
 import Link from "next/link";
 import {
   FaFacebookF,
@@ -79,40 +23,21 @@ const Footer = () => {
           </p>
 
           <div className="flex gap-4 mt-8 text-sm text-white/80">
-            <Link
-              href="/"
-              className="transition hover:text-white hover:underline"
-            >
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
               <FaFacebookF size={18} />
-            </Link>
-
-            <Link
-              href="/"
-              className="transition hover:text-white hover:underline"
-            >
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
               <FaInstagram size={18} />
-            </Link>
-
-            <Link
-              href="/"
-              className="transition hover:text-white hover:underline"
-            >
+            </a>
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
               <FaXTwitter size={18} />
-            </Link>
-
-            <Link
-              href="/"
-              className="transition hover:text-white hover:underline"
-            >
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
               <FaLinkedinIn size={18} />
-            </Link>
-
-            <Link
-              href="/"
-              className="transition hover:text-white hover:underline"
-            >
+            </a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
               <FaYoutube size={18} />
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -121,24 +46,17 @@ const Footer = () => {
           <h3 className="mb-5 text-lg font-semibold">Platform</h3>
 
           <div className="flex flex-col gap-3 text-sm text-white/70">
-            <Link href="/" className="transition hover:text-white">
+            <Link href="/mentors" className="transition hover:text-white">
               Browse Mentors
             </Link>
-
-            <Link href="/" className="transition hover:text-white">
-              Book a Session
-            </Link>
-
-            <Link href="/" className="transition hover:text-white">
+            <Link href="/register" className="transition hover:text-white">
               Become a Mentor
             </Link>
-
-            <Link href="/" className="transition hover:text-white">
-              Mentorship for Teams
+            <Link href="/mentors" className="transition hover:text-white">
+              Find a Mentor
             </Link>
-
-            <Link href="/" className="transition hover:text-white">
-              Testimonials
+            <Link href="/login" className="transition hover:text-white">
+              Sign In
             </Link>
           </div>
         </div>
@@ -205,20 +123,18 @@ const Footer = () => {
       {/* Bottom */}
       <div className="border-t border-white/10">
         <div className="flex flex-col items-center justify-between gap-4 px-6 py-5 mx-auto text-sm max-w-7xl md:flex-row text-white/60">
-          <p>© 2026 Mentora. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Mentora. All rights reserved.</p>
 
           <div className="flex gap-5">
-            <Link href="/" className="transition hover:text-white">
+            <span className="transition cursor-default hover:text-white">
               Terms
-            </Link>
-
-            <Link href="/" className="transition hover:text-white">
+            </span>
+            <span className="transition cursor-default hover:text-white">
               Privacy
-            </Link>
-
-            <Link href="/" className="transition hover:text-white">
+            </span>
+            <span className="transition cursor-default hover:text-white">
               Cookies
-            </Link>
+            </span>
           </div>
         </div>
       </div>

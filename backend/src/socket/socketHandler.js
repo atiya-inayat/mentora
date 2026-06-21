@@ -14,6 +14,15 @@ const resolveSession = async (id) => {
   return session;
 };
 
+const isParticipant = async (session, userId) => {
+  const booking = await Booking.findById(session.bookingId);
+  if (!booking) return false;
+  return (
+    booking.mentorId.toString() === userId.toString() ||
+    booking.menteeId.toString() === userId.toString()
+  );
+};
+
 const getTimeStatus = (session) => {
   const now = new Date();
   if (session.status === "completed" || session.status === "expired") return session.status;
@@ -78,6 +87,11 @@ export const initSocket = (io) => {
         return;
       }
 
+      if (!(await isParticipant(session, socket.user.sub))) {
+        socket.emit("error", { message: "You are not a participant of this session." });
+        return;
+      }
+
       const roomId = session._id.toString();
       socket.join(roomId);
       socket.currentRoomId = roomId;
@@ -94,7 +108,7 @@ export const initSocket = (io) => {
       }
     });
 
-    socket.on("send_message", async ({ sessionId, receiverId, content }) => {
+    const sendMessageHandler = async ({ sessionId, receiverId, content, file }) => {
       const session = await resolveSession(sessionId);
       if (!session) {
         socket.emit("error", { message: "Session not found." });
@@ -115,6 +129,11 @@ export const initSocket = (io) => {
       const senderId = socket.user.sub;
       const roomId = session._id.toString();
 
+      if (!(await isParticipant(session, senderId))) {
+        socket.emit("error", { message: "You are not a participant of this session." });
+        return;
+      }
+
       const messageCount = await Message.countDocuments({ sessionId: roomId });
       if (messageCount === 0) {
         const booking = await Booking.findById(session.bookingId);
@@ -124,15 +143,21 @@ export const initSocket = (io) => {
         }
       }
 
-      const message = await Message.create({
-        receiverId,
-        sessionId: roomId,
-        content,
-        senderId,
-      });
+      if (!content && !file) {
+        socket.emit("error", { message: "Message content or file is required." });
+        return;
+      }
+
+      const messageData = { receiverId, sessionId: roomId, senderId };
+      if (content) messageData.content = content;
+      if (file) messageData.file = file;
+
+      const message = await Message.create(messageData);
 
       io.to(roomId).emit("receive_message", message);
-    });
+    };
+
+    socket.on("send_message", sendMessageHandler);
 
     socket.on("video-offer", ({ offer, sessionId }) => {
       const roomId = socket.currentRoomId;

@@ -2,19 +2,21 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
 import { useSession, useEndSession } from "@/lib/hooks/useSession";
 import useAuthStore from "@/lib/store/authStore";
 import Navbar from "@/app/components/shared/Navbar";
 import VideoCall from "@/app/components/session/VideoCall";
 import SessionTimeBanner from "@/app/components/session/SessionTimeBanner";
+import { Spinner } from "@/app/components/shared/LoadingSkeleton";
 import api from "@/lib/axios";
 import {
-  Send, MessageSquare, StopCircle, CalendarClock, X,
+  Send, MessageSquare, StopCircle, CalendarClock, X, Paperclip, FileText, Download,
 } from "lucide-react";
 
 export default function SessionPage() {
-  const { sessionId } = useParams();
+  const { session: sessionId } = useParams();
   const { user } = useAuthStore();
   const router = useRouter();
   const { data: sessionData, isLoading } = useSession(sessionId);
@@ -27,6 +29,8 @@ export default function SessionPage() {
   const [newDate, setNewDate] = useState("");
   const [postponing, setPostponing] = useState(false);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -99,6 +103,50 @@ export default function SessionPage() {
     setInput("");
   };
 
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setError("File size exceeds 10MB limit");
+      setTimeout(() => setError(""), 5000);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post("/api/upload", formData);
+      const { file: uploaded } = res.data;
+
+      socketRef.current?.emit("send_message", {
+        sessionId,
+        content: "",
+        receiverId,
+        file: uploaded,
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          content: "",
+          file: uploaded,
+          senderId: user?.id,
+          createdAt: new Date(),
+        },
+      ]);
+    } catch (err) {
+      setError(err?.response?.data?.message || "File upload failed");
+      setTimeout(() => setError(""), 5000);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handlePostpone = async () => {
     if (!newDate) return;
     setPostponing(true);
@@ -116,8 +164,9 @@ export default function SessionPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-primary">
-        Loading...
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <Spinner />
       </div>
     );
   }
@@ -138,6 +187,9 @@ export default function SessionPage() {
       <Navbar />
 
       <div className="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <Link href="/my-sessions" className="inline-flex items-center gap-1 mb-3 text-xs transition text-primary/60 hover:text-primary">
+          ← Back to Sessions
+        </Link>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <MessageSquare className="w-6 h-6 text-primary" />
@@ -316,7 +368,25 @@ export default function SessionPage() {
                               : "bg-background text-primary rounded-bl-md"
                           }`}
                         >
-                          <p className="text-sm leading-5">{msg.content}</p>
+                          {msg.content && (
+                            <p className="text-sm leading-5">{msg.content}</p>
+                          )}
+                          {msg.file && (
+                            <a
+                              href={msg.file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`flex items-center gap-2 mt-1 p-2 rounded-lg ${
+                                isMine ? "bg-background/20" : "bg-primary/5"
+                              } hover:opacity-80 transition-opacity`}
+                            >
+                              <FileText className="w-4 h-4 shrink-0" />
+                              <span className="text-xs truncate max-w-[180px]">
+                                {msg.file.name}
+                              </span>
+                              <Download className="w-3 h-3 ml-auto shrink-0" />
+                            </a>
+                          )}
                           <p className={`mt-1 text-[10px] ${isMine ? "text-background/60" : "text-primary/40"}`}>
                             {new Date(msg.createdAt).toLocaleTimeString("en-US", {
                               hour: "2-digit", minute: "2-digit",
@@ -331,6 +401,25 @@ export default function SessionPage() {
               </div>
 
               <div className="flex items-center gap-2 p-3 border-t bg-background rounded-b-2xl border-primary/10">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.zip,.rar"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="p-2 transition-colors rounded-xl text-primary/60 hover:text-primary hover:bg-primary/10 disabled:opacity-50"
+                  title="Attach file"
+                >
+                  {uploading ? (
+                    <span className="inline-block w-4 h-4 border-2 border-t-transparent rounded-full border-primary animate-spin" />
+                  ) : (
+                    <Paperclip className="w-4 h-4" />
+                  )}
+                </button>
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}

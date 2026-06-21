@@ -84,6 +84,9 @@ export default function CreateMentorProfile() {
 
       <div className="flex items-center justify-center min-h-[80vh] px-4 py-12">
         <div className="w-full max-w-lg p-8 border shadow-lg rounded-3xl bg-surface border-primary/20">
+          <Link href="/mentor/dashboard" className="inline-flex items-center gap-1 mb-4 text-xs transition text-primary/60 hover:text-primary">
+            ← Back to Dashboard
+          </Link>
           <div className="mb-8 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary">
               <User className="w-8 h-8 text-background" />

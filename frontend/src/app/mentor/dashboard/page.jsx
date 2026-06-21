@@ -6,6 +6,7 @@ import api from "@/lib/axios";
 import Navbar from "@/app/components/shared/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Spinner, StatsCardSkeleton, CardSkeleton } from "@/app/components/shared/LoadingSkeleton";
 import {
   Calendar, CheckCircle, Clock, User, UserPlus, Play, StopCircle, MessageSquare, AlertCircle,
 } from "lucide-react";
@@ -40,8 +41,18 @@ export default function MentorDashboard() {
 
   if (isLoading || profileLoading)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-primary">
-        Loading...
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:px-8">
+          <div className="h-8 rounded bg-primary/10 w-64 animate-pulse mb-8" />
+          <div className="grid gap-6 mb-12 sm:grid-cols-3">
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </div>
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
       </div>
     );
 
@@ -98,6 +109,9 @@ export default function MentorDashboard() {
         )}
 
         <div className="mb-10">
+          <Link href="/mentors" className="inline-flex items-center gap-1 mb-2 text-xs transition text-primary/60 hover:text-primary">
+            ← Browse Mentors
+          </Link>
           <h1 className="text-4xl font-semibold text-primary font-fugaz">
             Mentor Dashboard
           </h1>

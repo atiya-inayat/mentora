@@ -4,7 +4,6 @@ import Session from "../models/Session.js";
 import Payment from "../models/Payment.js";
 import MentorProfile from "../models/MentorProfile.js";
 import stripe from "../config/stripe.js";
-import Message from "../models/Message.js";
 import { getIO } from "../socket/socketEmitter.js";
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
@@ -121,16 +120,8 @@ export const endSession = async (req, res) => {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    if (
-      booking.mentorId.toString() !== userId.toString() &&
-      booking.menteeId.toString() !== userId.toString()
-    ) {
-      return res.status(403).json({ success: false, message: "Unauthorized" });
-    }
-
-    const payment = await Payment.findOne({ bookingId });
-    if (!payment || payment.status !== "paid") {
-      return res.status(400).json({ success: false, message: "Payment not completed" });
+    if (booking.mentorId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Only the mentor can end the session" });
     }
 
     const session = await Session.findOne({ bookingId });
@@ -142,8 +133,13 @@ export const endSession = async (req, res) => {
       return res.status(400).json({ success: false, message: "Session must be ongoing" });
     }
 
-    if (!payment.escrow) {
-      return res.status(400).json({ success: false, message: "Payment already released" });
+    const payment = await Payment.findOneAndUpdate(
+      { bookingId, escrow: true },
+      { $set: { escrow: false } },
+      { new: true },
+    );
+    if (!payment) {
+      return res.status(400).json({ success: false, message: "Payment already released or not found" });
     }
 
     session.status = "completed";
@@ -224,8 +220,6 @@ export const postponeSession = async (req, res) => {
     session.expiresAt = new Date(new Date(newScheduledAt).getTime() + SESSION_DURATION_MS);
     await session.save();
 
-    await Message.deleteMany({ sessionId: session._id });
-
     return res.status(200).json({
       success: true,
       message: "Session postponed successfully",
@@ -260,6 +254,17 @@ export const getSession = async (req, res) => {
 
     if (!session) {
       return res.status(404).json({ success: false, message: "Session not found" });
+    }
+
+    const booking = session.bookingId?._id
+      ? session.bookingId
+      : await Booking.findById(session.bookingId);
+    if (
+      booking &&
+      booking.mentorId?.toString() !== req.user._id.toString() &&
+      booking.menteeId?.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
     session = await autoExpireIfPast(session);

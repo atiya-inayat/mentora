@@ -2,6 +2,7 @@
 import { useMyBookings } from "@/lib/hooks/useBookings";
 import Navbar from "../components/shared/Navbar";
 import useAuthStore from "@/lib/store/authStore";
+import { Spinner, ProfileSkeleton, StatsCardSkeleton, CardSkeleton } from "../components/shared/LoadingSkeleton";
 import Link from "next/link";
 import {
   Calendar, BookOpen, CheckCircle, Clock, Mail, User, CreditCard, MessageSquare, Star, AlertCircle,
@@ -21,8 +22,23 @@ export default function MenteeDashboard() {
 
   if (isLoading)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-primary">
-        Loading...
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
+            <ProfileSkeleton />
+            <div className="space-y-8">
+              <div className="h-8 rounded bg-primary/10 w-48 animate-pulse" />
+              <div className="grid gap-4 sm:grid-cols-3">
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+              </div>
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          </div>
+        </div>
       </div>
     );
 
@@ -76,6 +92,9 @@ export default function MenteeDashboard() {
 
           <div className="space-y-8">
             <div>
+              <Link href="/mentors" className="inline-flex items-center gap-1 mb-2 text-xs transition text-primary/60 hover:text-primary">
+                ← Browse Mentors
+              </Link>
               <h1 className="text-3xl font-semibold text-primary font-fugaz">
                 My Sessions
               </h1>
@@ -188,7 +207,7 @@ export default function MenteeDashboard() {
                             </Link>
                           )}
 
-                          {isCompleted && (
+                          {isCompleted && !booking.reviewed && (
                             <Link href={`/review/${booking._id}`} className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20">
                               <Star className="w-4 h-4" />
                               Review

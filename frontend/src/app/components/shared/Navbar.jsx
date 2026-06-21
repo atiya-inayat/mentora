@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import useAuthStore from "@/lib/store/authStore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,6 +10,12 @@ import { Menu, X } from "lucide-react";
 const Navbar = () => {
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const queryClient = useQueryClient();
+  const dashboardUrl = user?.role === "mentor"
+    ? "/mentor/dashboard"
+    : user?.role === "admin"
+      ? "/admin"
+      : "/dashboard";
 
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -19,9 +26,10 @@ const Navbar = () => {
 
   const handleLogout = useCallback(async () => {
     await logout();
+    queryClient.clear();
     router.push("/login");
     setOpen(false);
-  }, [logout, router]);
+  }, [logout, queryClient, router]);
 
   if (!mounted) return null;
 
@@ -30,7 +38,7 @@ const Navbar = () => {
       <div className="flex items-center justify-between px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         {/* Logo */}
         <Link
-          href="/"
+          href={user ? dashboardUrl : "/"}
           className="text-2xl font-bold tracking-tight text-background font-fugaz"
         >
           Mentora
@@ -59,11 +67,14 @@ const Navbar = () => {
 
           {user && (
             <>
-              <Link
-                href="/my-bookings"
-                className="px-4 py-2 rounded-full bg-surface/40 text-background hover:opacity-80"
-              >
+              <Link className="hover:text-surface" href={dashboardUrl}>
+                Dashboard
+              </Link>
+              <Link className="hover:text-surface" href="/my-bookings">
                 My Bookings
+              </Link>
+              <Link className="hover:text-surface" href="/my-sessions">
+                My Sessions
               </Link>
               <button
                 onClick={handleLogout}

@@ -22,7 +22,14 @@ const messageSchema = new mongoose.Schema(
 
     content: {
       type: String,
-      required: true,
+      default: "",
+    },
+
+    file: {
+      url: { type: String },
+      name: { type: String },
+      size: { type: Number },
+      mimeType: { type: String },
     },
   },
   {

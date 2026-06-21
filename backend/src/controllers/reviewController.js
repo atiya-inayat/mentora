@@ -20,7 +20,13 @@ export const creatReview = async (req, res) => {
     if (!booking || booking.status !== "completed") {
       return res.status(400).json({
         success: false,
-        message: "Ibooking must be completed before giving review.",
+        message: "Booking must be completed before giving review.",
+      });
+    }
+    if (booking.menteeId.toString() !== menteeId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only review your own bookings.",
       });
     }
     const mentorId = booking.mentorId;
@@ -29,7 +35,7 @@ export const creatReview = async (req, res) => {
     if (existingReview) {
       return res.status(400).json({
         success: false,
-        message: "you have alrwady reviewed this mentor.",
+        message: "You have already reviewed this mentor.",
       });
     }
 

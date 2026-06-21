@@ -113,21 +113,28 @@ export const confirmPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "Booking must be accepted" });
     }
 
-    // Check if payment already exists
     const existingPayment = await Payment.findOne({ bookingId });
     if (existingPayment && existingPayment.status === "paid") {
       return res.status(200).json({ success: true, message: "Already paid" });
     }
 
-    // Update booking status
+    if (!existingPayment || !existingPayment.stripePaymentId) {
+      return res.status(400).json({ success: false, message: "Payment not initiated" });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(existingPayment.stripePaymentId);
+    if (paymentIntent.status !== "succeeded") {
+      return res.status(400).json({
+        success: false,
+        message: `Payment has not been completed. Status: ${paymentIntent.status}`,
+      });
+    }
+
     booking.status = "payment_held";
     await booking.save();
 
-    // Update or create payment record
-    if (existingPayment) {
-      existingPayment.status = "paid";
-      await existingPayment.save();
-    }
+    existingPayment.status = "paid";
+    await existingPayment.save();
 
     return res.status(200).json({ success: true, message: "Payment confirmed" });
   } catch (error) {

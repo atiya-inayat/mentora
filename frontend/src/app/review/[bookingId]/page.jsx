@@ -5,7 +5,7 @@ import { useMyBookings } from "@/lib/hooks/useBookings";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import Navbar from "@/app/components/shared/Navbar";
-import { Star, ArrowLeft, CheckCircle } from "lucide-react";
+import { Star, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function ReviewPage() {
@@ -77,10 +77,9 @@ export default function ReviewPage() {
       <div className="px-4 py-12 mx-auto max-w-lg sm:px-6 lg:px-8">
         <Link
           href="/my-bookings"
-          className="inline-flex items-center gap-2 mb-8 text-sm font-medium transition text-primary/60 hover:text-primary"
+          className="inline-flex items-center gap-1 mb-4 text-xs transition text-primary/60 hover:text-primary"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to bookings
+          ← Back to Bookings
         </Link>
 
         <div className="p-8 border shadow-lg rounded-3xl bg-surface border-primary/20">

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import MentorProfile from "../models/MentorProfile.js";
 import Session from "../models/Session.js";
+import Review from "../models/Review.js";
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 const SESSION_DURATION_MS = 60 * 60 * 1000;
@@ -146,6 +147,15 @@ export const getMyBookings = async (req, res) => {
       sessionMap[s.bookingId.toString()] = s;
     }
 
+    const reviewMap = {};
+    const reviews = await Review.find({
+      bookingId: { $in: bookingIds },
+      menteeId: userId,
+    });
+    for (const r of reviews) {
+      reviewMap[r.bookingId.toString()] = true;
+    }
+
     const enriched = bookings.map((booking) => {
       const bookingObj = booking.toObject();
       const session = sessionMap[booking._id.toString()];
@@ -164,6 +174,7 @@ export const getMyBookings = async (req, res) => {
             }
           : null,
         timeStatus,
+        reviewed: !!reviewMap[booking._id.toString()],
       };
     });
 

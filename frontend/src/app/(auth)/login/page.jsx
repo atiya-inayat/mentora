@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import useAuthStore from "@/lib/store/authStore";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -26,6 +27,7 @@ export default function LoginPage() {
 
   // Auth Store
   const { login, isLoading } = useAuthStore();
+  const queryClient = useQueryClient();
 
   // Form Setup
   const {
@@ -95,6 +97,8 @@ export default function LoginPage() {
       const result = await login(data);
 
       if (result?.success) {
+        queryClient.clear();
+
         const roleRoutes = {
           admin: "/admin/dashboard",
           mentee: "/dashboard",
@@ -121,6 +125,11 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-background">
       <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-surface border-primary/20">
+        {/* Back to Home */}
+        <Link href="/" className="inline-flex items-center gap-1 mb-4 text-xs transition text-primary/60 hover:text-primary">
+          ← Back to Home
+        </Link>
+
         {/* Header */}
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-primary font-poppins">

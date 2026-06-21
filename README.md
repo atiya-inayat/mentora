@@ -15,11 +15,12 @@ A full-stack mentorship marketplace connecting learners with industry profession
 
 - **Authentication** — Register/login with httpOnly cookie-based JWT, token rotation, rate limiting with exponential backoff, timing attack prevention
 - **Role-based access** — Admin, Mentor, Mentee roles with protected routes
-- **Mentor discovery** — Browse and search mentors, view profiles
-- **Booking system** — Schedule 1-on-1 mentoring sessions
-- **Real-time chat** — Socket.io-powered messaging
-- **Payments** — Stripe integration for session payments
-- **Session management** — View and revoke active sessions
+- **Mentor discovery** — Browse and search mentors, view profiles with ratings
+- **Booking system** — Schedule 1-on-1 mentoring sessions with Stripe payments
+- **Real-time chat & file sharing** — Socket.io-powered messaging with document uploads
+- **Video calls** — In-session WebRTC video calling
+- **Session management** — Start, join, postpone, and end sessions
+- **Session reviews** — Rate and review completed sessions
 - **User blocking** — Admin can block users with immediate token revocation
 
 ## Project Structure
@@ -34,30 +35,33 @@ mentora/
 │   │   │   ├── dashboard/       # Mentee dashboard
 │   │   │   ├── mentor/          # Mentor dashboard
 │   │   │   ├── mentors/         # Mentor discovery
-│   │   │   ├── session/         # Session management
-│   │   │   └── components/      # Shared UI components
-│   │   └── lib/
-│   │       ├── store/           # Zustand stores
-│   │       └── axios.js         # Axios instance with httpOnly cookies
+│   │   │   ├── my-bookings/     # Booking list
+│   │   │   ├── my-sessions/     # Session list
+│   │   │   ├── session/         # Live session (chat, video, file upload)
+│   │   │   ├── payment/         # Checkout page
+│   │   │   ├── review/          # Session review
+│   │   │   └── components/      # Shared UI components (Navbar, Footer, LoadingSkeleton, etc.)
+│   │   ├── lib/
+│   │   │   ├── store/           # Zustand stores
+│   │   │   ├── hooks/           # TanStack Query hooks
+│   │   │   └── axios.js         # Axios instance with httpOnly cookies
+│   │   └── middleware.js        # Route protection middleware
 │   └── package.json
 │
 ├── backend/                     # Express.js 5 API
 │   ├── src/
-│   │   ├── controllers/         # Route handlers (auth, booking, mentor, etc.)
+│   │   ├── controllers/         # Route handlers (auth, booking, mentor, session, payment, review, upload)
 │   │   ├── middleware/          # Auth, rate limiting, error handling
-│   │   ├── models/              # Mongoose schemas (User, RefreshToken, etc.)
+│   │   ├── models/              # Mongoose schemas (User, RefreshToken, Booking, Session, Message, etc.)
 │   │   ├── routes/              # Express routers
 │   │   ├── services/            # Business logic
 │   │   ├── socket/              # Socket.io handlers
 │   │   ├── utils/               # Password validator, etc.
 │   │   ├── config/              # DB connection
 │   │   └── __tests__/           # Integration tests
-   │   ├── server.js             # App entrypoint
+│   ├── server.js                # App entrypoint
 │   └── package.json
 │
-├── AUTHENTICATION_IMPLEMENTATION_PLAN.md
-├── IMPLEMENTATION_CHECKLIST.md
-├── QUICK_START.md
 └── README.md
 ```
 
@@ -131,38 +135,28 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/mentors` | Browse mentors |
+| GET | `/api/mentors/:id` | Get mentor profile |
 | POST | `/api/bookings` | Create booking |
-| POST | `/api/payments` | Process payment |
+| POST | `/api/payments/create-payment-intent` | Create Stripe payment intent |
+| POST | `/api/payments/confirm` | Confirm payment |
+| POST | `/api/upload` | Upload file (image, doc, pdf, etc.) |
+| PUT | `/api/sessions/:id/start` | Start session (mentor only) |
+| PUT | `/api/sessions/:id/end` | End session (mentor only) |
+| PUT | `/api/sessions/:id/postpone` | Reschedule session |
+| POST | `/api/reviews/:bookingId` | Submit session review |
 
-## Authentication Architecture
+## Security
 
 - **httpOnly cookies** — Tokens are never exposed to JavaScript (no localStorage)
 - **Token rotation** — Refresh token is rotated on every use; old token is revoked
-- **Token families** — Track token lineage to revoke entire session chains
 - **Rate limiting** — 5 attempts/15min for register, 10/15min for login, with exponential backoff (2^n seconds, capped at 1 hour)
 - **Timing attack prevention** — Constant-time bcrypt comparison with dummy hash for non-existent users
-- **User blocking** — Blocked users' tokens are immediately revoked on any request
+- **User blocking** — Blocked users' tokens are immediately revoked
 - **Race condition protection** — Atomic `findOneAndUpdate` ensures only one refresh succeeds
-- **CORS** — Environment-based, supports comma-separated multiple origins
-
-## Error Codes
-
-| Code | Meaning |
-|------|---------|
-| `MISSING_FIELDS` | Required fields not provided |
-| `WEAK_PASSWORD` | Password doesn't meet strength requirements |
-| `USER_EXISTS` | Email already registered |
-| `INVALID_CREDENTIALS` | Wrong email or password |
-| `USER_BLOCKED` | Account suspended |
-| `NO_TOKEN` | No access token cookie |
-| `TOKEN_EXPIRED` | Access token expired |
-| `NO_REFRESH_TOKEN` | No refresh token cookie |
-| `INVALID_REFRESH_TOKEN` | Refresh token invalid/expired |
-| `TOKEN_REVOKED` | Token already used (replay detected) |
-| `TOKEN_ROTATION_ERROR` | Race condition — token already rotated |
-| `JWT_ERROR` | General JWT error |
-| `DATABASE_ERROR` | Internal server/database error |
-| `RATE_LIMITED` | Too many requests |
+- **Stripe webhook verification** — Raw body parsing for webhook signature validation
+- **Payment integrity** — Server-side PaymentIntent verification before marking payments complete
+- **Socket authorization** — Participant-only access to session rooms and messages
+- **Session escrow** — Atomic escrow release prevents TOCTOU race conditions in payouts
 
 ## Testing
 
@@ -170,7 +164,6 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 cd backend
 npm test                  # Run tests
 npm run test:coverage     # With coverage report
-npm run test:watch        # Watch mode
 ```
 
 Tests cover: register, login, token refresh, logout, error codes, rate limiting, timing attack prevention, user block, and race condition prevention.

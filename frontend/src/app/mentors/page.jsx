@@ -3,16 +3,29 @@
 import { useMentors } from "@/lib/hooks/useMentors";
 import MentorCard from "@/app/components/mentor/MentorCard";
 import Navbar from "@/app/components/shared/Navbar";
-import { ArrowLeft } from "lucide-react";
+import useAuthStore from "@/lib/store/authStore";
 import Link from "next/link";
+import { CardSkeleton } from "@/app/components/shared/LoadingSkeleton";
 
 const MentorPage = () => {
+  const { user } = useAuthStore();
   const { data, isLoading, error } = useMentors();
+  const backUrl = user
+    ? user.role === "mentor" ? "/mentor/dashboard" : "/dashboard"
+    : "/";
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-primary">
-        Loading mentors...
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:px-8">
+          <div className="h-8 rounded bg-primary/10 w-48 animate-pulse mb-8" />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
+        </div>
       </div>
     );
   }
@@ -31,11 +44,10 @@ const MentorPage = () => {
 
       <div className="px-4 pt-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <Link
-          href="/mentor/dashboard"
-          className="inline-flex items-center gap-2 text-sm font-medium transition text-primary/60 hover:text-primary"
+          href={backUrl}
+          className="inline-flex items-center gap-1 mb-2 text-xs transition text-primary/60 hover:text-primary"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
+          ← Back
         </Link>
       </div>
 

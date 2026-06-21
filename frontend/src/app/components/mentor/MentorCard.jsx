@@ -1,31 +1,3 @@
-// import Link from "next/link";
-
-// export default function MentorCard({ mentor }) {
-//   if (!mentor) {
-//     return null;
-//   }
-
-//   return (
-//     <div className="w-full p-5 border rounded-lg text-background bg-primary border-primary/50 ">
-//       <h3 className="text-3xl text-white font-fugaz">{mentor.userId?.name}</h3>
-//       <p className="font-mono text-lg">{mentor.bio}</p>
-//       <p>${mentor.hourlyRate}/hr</p>
-//       <p>⭐ {mentor.averageRating || "No ratings yet"}</p>
-//       <p className="px-2 py-3 my-2 border border-background rounded-3xl bg-background/50 text-primary/90 ">
-//         {mentor.skills?.join(", ")}
-//       </p>
-
-//       <button className="px-4 py-2 border rounded-full shadow-lg cursor-pointer hover:bg-background/20 bg-background/50">
-//         {mentor._id ? (
-//           <Link href={`/mentors/${mentor._id}`}>View Profile</Link>
-//         ) : (
-//           <span>Profile Unavailable</span>
-//         )}
-//       </button>
-//     </div>
-//   );
-// }
-
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
 

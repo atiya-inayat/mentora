@@ -5,6 +5,7 @@ import useAuthStore from "@/lib/store/authStore";
 import Navbar from "@/app/components/shared/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Spinner, CardSkeleton } from "@/app/components/shared/LoadingSkeleton";
 import {
   Calendar, User, Clock, CheckCircle, CreditCard, MessageSquare, Play, Star, AlertCircle,
 } from "lucide-react";
@@ -25,8 +26,13 @@ export default function MyBookingsPage() {
 
   if (isLoading)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-primary">
-        Loading...
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="px-4 py-12 mx-auto max-w-4xl sm:px-6 lg:px-8">
+          <div className="h-8 rounded bg-primary/10 w-48 animate-pulse mb-8" />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
       </div>
     );
 
@@ -48,6 +54,9 @@ export default function MyBookingsPage() {
     <main className="min-h-screen bg-background">
       <Navbar />
       <div className="px-4 py-12 mx-auto max-w-4xl sm:px-6 lg:px-8">
+        <Link href={isMentor ? "/mentor/dashboard" : "/dashboard"} className="inline-flex items-center gap-1 mb-2 text-xs transition text-primary/60 hover:text-primary">
+          ← Back to Dashboard
+        </Link>
         <h1 className="mb-2 text-3xl font-semibold text-primary font-fugaz">
           {isMentor ? "All Requests" : "My Bookings"}
         </h1>

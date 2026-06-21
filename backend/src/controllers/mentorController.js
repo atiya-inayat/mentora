@@ -57,17 +57,13 @@ export const getAllMentors = async (req, res) => {
     // We find all profiles and "join" the User data
     // We only want the 'name' and want to hide 'email' and 'password'
 
-    const mentors = await MentorProfile.find().populate("userId", "name role ");
-
-    if (!mentors || mentors.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "no mentors yet" });
-    }
+    const mentors = await MentorProfile.find()
+      .select("-stripeAccountId")
+      .populate("userId", "name role ");
 
     return res.status(200).json({
       success: true,
-      count: mentors.length, // show how many were found
+      count: mentors.length,
       data: mentors,
     });
   } catch (error) {
@@ -87,15 +83,12 @@ export const getMentorById = async (req, res) => {
         .json({ success: false, message: "Invalid mentor id " });
     }
 
-    const mentor = await MentorProfile.findById(id).populate(
-      "userId",
-      "name role",
-    );
+    const mentor = await MentorProfile.findById(id)
+      .select("-stripeAccountId")
+      .populate("userId", "name email");
 
     if (!mentor) {
-      return res
-        .status(404)
-        .json({ success: false, message: "mentor not found." });
+      return res.status(404).json({ success: false, message: "Mentor not found" });
     }
 
     return res.status(200).json({ success: true, data: mentor });

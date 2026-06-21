@@ -4,7 +4,7 @@ import { useState } from "react";
 import api from "@/lib/axios";
 import useAuthStore from "@/lib/store/authStore";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -41,6 +41,7 @@ const registerSchema = z
 export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -62,6 +63,8 @@ export default function RegisterPage() {
     },
 
     onSuccess: (data) => {
+      queryClient.clear();
+
       const { user } = data;
 
       setAuth(user);
@@ -86,6 +89,11 @@ export default function RegisterPage() {
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-background">
       <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-surface border-primary/20">
+        {/* Back to Home */}
+        <Link href="/" className="inline-flex items-center gap-1 mb-4 text-xs transition text-primary/60 hover:text-primary">
+          ← Back to Home
+        </Link>
+
         {/* Header */}
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-primary font-poppins">

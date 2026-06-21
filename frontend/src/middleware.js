@@ -71,7 +71,8 @@ const isProtectedRoute = (pathname) => {
     pathname.startsWith("/my-sessions") ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/payment/") ||
-    pathname.startsWith("/review/")
+    pathname.startsWith("/review/") ||
+    pathname.startsWith("/session/")
   );
 };
 
@@ -154,6 +155,8 @@ export const config = {
     // Match payment and review
     "/payment/:path*",
     "/review/:path*",
+    // Match session
+    "/session/:path*",
   ],
 };
 

@@ -5,6 +5,7 @@ import useAuthStore from "@/lib/store/authStore";
 import Navbar from "@/app/components/shared/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Spinner, CardSkeleton } from "@/app/components/shared/LoadingSkeleton";
 import { Calendar, User, MessageSquare, Play, AlertCircle, Clock } from "lucide-react";
 
 const statusLabels = {
@@ -23,8 +24,13 @@ export default function MySessionsPage() {
 
   if (isLoading)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-primary">
-        Loading...
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="px-4 py-12 mx-auto max-w-4xl sm:px-6 lg:px-8">
+          <div className="h-8 rounded bg-primary/10 w-48 animate-pulse mb-8" />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
       </div>
     );
 
@@ -49,6 +55,9 @@ export default function MySessionsPage() {
     <main className="min-h-screen bg-background">
       <Navbar />
       <div className="px-4 py-12 mx-auto max-w-4xl sm:px-6 lg:px-8">
+        <Link href={isMentor ? "/mentor/dashboard" : "/dashboard"} className="inline-flex items-center gap-1 mb-2 text-xs transition text-primary/60 hover:text-primary">
+          ← Back to Dashboard
+        </Link>
         <h1 className="mb-2 text-3xl font-semibold text-primary font-fugaz">My Sessions</h1>
         <p className="mb-8 text-primary/70">
           {isMentor ? "Manage your active and completed mentoring sessions" : "View your upcoming and past mentoring sessions"}
@@ -62,7 +71,12 @@ export default function MySessionsPage() {
           <div className="space-y-4">
             {sessions.map((booking) => {
               const otherParty = isMentor ? booking.menteeId : booking.mentorId;
-              const ts = booking.timeStatus;
+              let ts = booking.timeStatus;
+              if (ts === "ready_to_start") {
+                const now = Date.now();
+                const scheduled = new Date(booking.scheduledAt).getTime();
+                if (now > scheduled + 15 * 60 * 1000) ts = "expired";
+              }
               const statusInfo = statusLabels[ts] || statusLabels.upcoming;
 
               return (
@@ -111,15 +125,6 @@ export default function MySessionsPage() {
                         </button>
                       )}
                       {ts === "active" && (
-                        <Link
-                          href={`/session/${booking._id}`}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                          Chat
-                        </Link>
-                      )}
-                      {!isMentor && ts === "active" && (
                         <Link
                           href={`/session/${booking._id}`}
                           className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20"

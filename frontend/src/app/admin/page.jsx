@@ -126,10 +126,10 @@ export default function AdminPanel() {
                         <span
                           className={`inline-block px-3 py-1 text-xs font-medium rounded-full capitalize ${
                             u.role === "admin"
-                              ? "bg-primary/10 text-primary"
+                              ? "bg-purple-100 text-purple-700"
                               : u.role === "mentor"
-                                ? "bg-primary/10 text-primary"
-                                : "bg-primary/10 text-primary"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
                           }`}
                         >
                           {u.role}
