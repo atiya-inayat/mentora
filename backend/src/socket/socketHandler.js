@@ -1,83 +1,43 @@
-// import Message from "../models/Message.js";
-// import Session from "../models/Session.js";
-// import jwt from "jsonwebtoken";
-
-// export const initSocket = (io) => {
-//   // Socket.IO authentication middleware
-//   // Runs before a client connects
-//   // - Extracts JWT token from handshake auth
-//   // - Verifies the token using JWT secret
-//   // - Attaches decoded user info to socket
-//   // - Rejects connection if token is invalid
-//   io.use((socket, next) => {
-//     const token = socket.handshake.auth.token;
-
-//     if (!token) {
-//       return next(new Error("Authentication required"));
-//     }
-
-//     try {
-//       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-//       socket.user = decoded;
-//       next();
-//     } catch (error) {
-//       next(new Error("Invalid token"));
-//     }
-//   });
-
-//   io.on("connection", (socket) => {
-//     console.log("User connected", socket.id);
-
-//     // 1. Joining a session room
-//     socket.on("join_session", async ({ sessionId }) => {
-//       const session = await Session.findById(sessionId);
-//       if (!session || session.status !== "ongoing") {
-//         socket.emit("session_error", { message: "Session  must be ongoing." });
-//         return;
-//       }
-
-//       socket.join(sessionId);
-//       console.log("client joined");
-//     });
-
-//     socket.on("send_message", async ({ sessionId, receiverId, content }) => {
-//       const session = await Session.findById(sessionId);
-//       if (!session || session.status !== "ongoing") {
-//         socket.emit("error", { message: "Session  must be ongoing." });
-//         return;
-//       }
-
-//       const senderId = socket.user.sub;
-
-//       const message = await Message.create({
-//         receiverId,
-//         sessionId,
-//         content,
-//         senderId,
-//       });
-
-//       io.to(sessionId).emit("receive_message", message);
-//     });
-
-//     socket.on("disconnect", () => {
-//       console.log("User disconnected:", socket.id);
-//     });
-//   });
-// };
-
 import Message from "../models/Message.js";
 import Session from "../models/Session.js";
+import Booking from "../models/Booking.js";
 import jwt from "jsonwebtoken";
 
-// Initialize all Socket.IO logic
+const FIFTEEN_MIN_MS = 15 * 60 * 1000;
+const SESSION_DURATION_MS = 60 * 60 * 1000;
+
+const resolveSession = async (id) => {
+  let session = await Session.findById(id);
+  if (!session) {
+    session = await Session.findOne({ bookingId: id });
+  }
+  return session;
+};
+
+const getTimeStatus = (session) => {
+  const now = new Date();
+  if (session.status === "completed" || session.status === "expired") return session.status;
+  if (!session.scheduledAt) return "active";
+
+  const scheduledAt = new Date(session.scheduledAt);
+  const expiresAt = session.expiresAt
+    ? new Date(session.expiresAt)
+    : new Date(scheduledAt.getTime() + SESSION_DURATION_MS);
+
+  if (now > expiresAt) return "expired";
+  if (now >= scheduledAt) return "active";
+  if (now >= scheduledAt.getTime() - FIFTEEN_MIN_MS) return "ready_to_start";
+  return "upcoming";
+};
+
 export const initSocket = (io) => {
-  //  Authentication middleware for all incoming socket connections
-  // - Checks if client provided a JWT token in handshake
-  // - Verifies token validity
-  // - Attaches decoded user info to socket (socket.user)
-  // - Blocks connection if token is missing/invalid
   io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
+    const raw = socket.request.headers.cookie || "";
+    const token = raw
+      .split(";")
+      .find((c) => c.trim().startsWith("accessToken="))
+      ?.split("=")[1]
+      ?.trim();
 
     if (!token) {
       return next(new Error("Authentication required"));
@@ -85,58 +45,115 @@ export const initSocket = (io) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      socket.user = decoded; // store authenticated user info
-      next(); // allow connection
+      socket.user = decoded;
+      next();
     } catch (error) {
-      next(new Error("Invalid token")); // reject connection
+      next(new Error("Invalid token"));
     }
   });
 
-  //  Runs when a client successfully connects
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
 
-    //  Join a session (room)
-    // - Validates session exists and is ongoing
-    // - Adds socket to a room using sessionId
     socket.on("join_session", async ({ sessionId }) => {
-      const session = await Session.findById(sessionId);
+      const session = await resolveSession(sessionId);
+      if (!session) {
+        socket.emit("error", { message: "Session not found." });
+        return;
+      }
 
-      if (!session || session.status !== "ongoing") {
+      const timeStatus = getTimeStatus(session);
+      if (timeStatus === "expired") {
+        socket.emit("error", { message: "This session has expired." });
+        return;
+      }
+
+      if (timeStatus === "completed") {
+        socket.emit("error", { message: "This session has already ended." });
+        return;
+      }
+
+      if (session.status !== "ongoing") {
         socket.emit("error", { message: "Session must be ongoing." });
         return;
       }
 
-      socket.join(sessionId); // join room
-      console.log("client joined");
+      const roomId = session._id.toString();
+      socket.join(roomId);
+      socket.currentRoomId = roomId;
+
+      const messages = await Message.find({ sessionId: roomId })
+        .sort({ createdAt: 1 })
+        .limit(100);
+
+      socket.emit("session_messages", messages);
+
+      const otherSockets = await io.in(roomId).fetchSockets();
+      if (otherSockets.length > 1) {
+        socket.emit("participant_joined", { userId: socket.user.sub });
+      }
     });
 
-    //  Send a message داخل session
-    // - Validates session is active
-    // - Creates message in database
-    // - Broadcasts message to all users in the same session room
     socket.on("send_message", async ({ sessionId, receiverId, content }) => {
-      const session = await Session.findById(sessionId);
+      const session = await resolveSession(sessionId);
+      if (!session) {
+        socket.emit("error", { message: "Session not found." });
+        return;
+      }
 
-      if (!session || session.status !== "ongoing") {
+      const timeStatus = getTimeStatus(session);
+      if (timeStatus !== "active") {
+        socket.emit("error", { message: "Chat is only available during the active session time." });
+        return;
+      }
+
+      if (session.status !== "ongoing") {
         socket.emit("error", { message: "Session must be ongoing." });
         return;
       }
 
-      const senderId = socket.user.sub; // user from JWT
+      const senderId = socket.user.sub;
+      const roomId = session._id.toString();
+
+      const messageCount = await Message.countDocuments({ sessionId: roomId });
+      if (messageCount === 0) {
+        const booking = await Booking.findById(session.bookingId);
+        if (!booking || booking.mentorId.toString() !== senderId) {
+          socket.emit("error", { message: "Only the mentor can start the conversation." });
+          return;
+        }
+      }
 
       const message = await Message.create({
         receiverId,
-        sessionId,
+        sessionId: roomId,
         content,
         senderId,
       });
 
-      //  Emit message to everyone in this session room
-      io.to(sessionId).emit("recieve_message", message);
+      io.to(roomId).emit("receive_message", message);
     });
 
-    //  Handle client disconnect
+    socket.on("video-offer", ({ offer, sessionId }) => {
+      const roomId = socket.currentRoomId;
+      if (roomId) socket.to(roomId).emit("video-offer", { offer, senderId: socket.user.sub });
+    });
+
+    socket.on("video-answer", ({ answer, sessionId }) => {
+      const roomId = socket.currentRoomId;
+      if (roomId) socket.to(roomId).emit("video-answer", { answer, senderId: socket.user.sub });
+    });
+
+    socket.on("ice-candidate", ({ candidate, sessionId }) => {
+      const roomId = socket.currentRoomId;
+      if (roomId) socket.to(roomId).emit("ice-candidate", { candidate, senderId: socket.user.sub });
+    });
+
+    socket.on("end-call", ({ sessionId }) => {
+      const roomId = socket.currentRoomId;
+      if (roomId) socket.to(roomId).emit("call-ended", { senderId: socket.user.sub });
+    });
+
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
     });

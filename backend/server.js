@@ -12,6 +12,7 @@ import adminRoutes from "./src/routes/adminRoute.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { initSocket } from "./src/socket/socketHandler.js";
+import { setIO } from "./src/socket/socketEmitter.js";
 import { errorHandler } from "./src/middleware/errorMiddleware.js";
 import { limiter, registerLimiterExport } from "./src/middleware/rateLimiter.js";
 import { loginLimiter, createBackoffMiddleware } from "./src/middleware/advancedRateLimiter.js";
@@ -34,6 +35,7 @@ const io = new Server(httpServer, {
 });
 
 initSocket(io);
+setIO(io);
 
 app.use(
   cors({
