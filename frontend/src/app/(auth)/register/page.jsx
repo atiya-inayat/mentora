@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import api from "@/lib/axios";
 import useAuthStore from "@/lib/store/authStore";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Eye, EyeOff } from "lucide-react";
 
 // Validation Schema
 const registerSchema = z
@@ -39,6 +41,8 @@ const registerSchema = z
 export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -80,7 +84,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-white">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-background">
       <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-surface border-primary/20">
         {/* Header */}
         <div className="mb-6 text-center">
@@ -88,7 +92,7 @@ export default function RegisterPage() {
             Mentora
           </h1>
 
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-primary/70">
             Create your account and start your journey
           </p>
         </div>
@@ -97,7 +101,7 @@ export default function RegisterPage() {
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {/* Role */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-primary/80">
               Role
             </label>
 
@@ -120,7 +124,7 @@ export default function RegisterPage() {
 
           {/* Name */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-primary/80">
               Name
             </label>
 
@@ -138,7 +142,7 @@ export default function RegisterPage() {
 
           {/* Email */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-primary/80">
               Email
             </label>
 
@@ -158,16 +162,30 @@ export default function RegisterPage() {
 
           {/* Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-primary/80">
               Password
             </label>
 
-            <input
-              {...register("password")}
-              type="password"
-              placeholder="Enter your password"
-              className="w-full px-3 py-2 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
-            />
+            <div className="relative">
+              <input
+                {...register("password")}
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/60 hover:text-primary"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             {errors.password && (
               <p className="mt-1 text-xs text-red-500">
@@ -178,16 +196,30 @@ export default function RegisterPage() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-primary/80">
               Confirm Password
             </label>
 
-            <input
-              {...register("confirmPassword")}
-              type="password"
-              placeholder="Confirm your password"
-              className="w-full px-3 py-2 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
-            />
+            <div className="relative">
+              <input
+                {...register("confirmPassword")}
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/60 hover:text-primary"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             {errors.confirmPassword && (
               <p className="mt-1 text-xs text-red-500">
@@ -214,7 +246,7 @@ export default function RegisterPage() {
         </form>
 
         {/* Footer */}
-        <p className="mt-5 text-sm text-center text-gray-600">
+        <p className="mt-5 text-sm text-center text-primary/70">
           Already have an account?{" "}
           <Link
             href="/login"

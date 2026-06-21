@@ -58,12 +58,20 @@ const Navbar = () => {
           )}
 
           {user && (
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 rounded-full bg-background text-primary hover:opacity-90"
-            >
-              Logout
-            </button>
+            <>
+              <Link
+                href="/my-bookings"
+                className="px-4 py-2 rounded-full bg-surface/40 text-background hover:opacity-80"
+              >
+                My Bookings
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-full bg-background text-primary hover:opacity-90"
+              >
+                Logout
+              </button>
+            </>
           )}
         </div>
 
@@ -101,12 +109,28 @@ const Navbar = () => {
             )}
 
             {user && (
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-left rounded-full bg-background text-primary"
-              >
-                Logout
-              </button>
+              <>
+                <Link
+                  onClick={() => setOpen(false)}
+                  href="/my-bookings"
+                  className="px-4 py-2 text-center rounded-full bg-surface/40"
+                >
+                  My Bookings
+                </Link>
+                <Link
+                  onClick={() => setOpen(false)}
+                  href="/my-sessions"
+                  className="px-4 py-2 text-center rounded-full bg-surface/40"
+                >
+                  My Sessions
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-left rounded-full bg-background text-primary"
+                >
+                  Logout
+                </button>
+              </>
             )}
           </div>
         </div>

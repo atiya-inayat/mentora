@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAuthStore from "@/lib/store/authStore";
+import { Eye, EyeOff } from "lucide-react";
 
 // Validation Schema
 const loginSchema = z.object({
@@ -17,6 +19,7 @@ const loginSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect URL
   const redirectTo = searchParams.get("redirect") || "/dashboard";
@@ -116,7 +119,7 @@ export default function LoginPage() {
     }
   };
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-white">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-background">
       <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-surface border-primary/20">
         {/* Header */}
         <div className="mb-6 text-center">
@@ -124,14 +127,14 @@ export default function LoginPage() {
             Mentora
           </h1>
 
-          <p className="mt-1 text-sm text-gray-600">Login to your account</p>
+          <p className="mt-1 text-sm text-primary/70">Login to your account</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Email */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-primary/80">
               Email
             </label>
 
@@ -151,16 +154,30 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-primary/80">
               Password
             </label>
 
-            <input
-              {...register("password")}
-              type="password"
-              placeholder="Enter your password"
-              className="w-full px-3 py-2 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
-            />
+            <div className="relative">
+              <input
+                {...register("password")}
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/60 hover:text-primary"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             {errors.password && (
               <p className="mt-1 text-xs text-red-500">
@@ -187,7 +204,7 @@ export default function LoginPage() {
         </form>
 
         {/* Footer */}
-        <p className="mt-5 text-sm text-center text-gray-600">
+        <p className="mt-5 text-sm text-center text-primary/70">
           Don&apos;t have an account?{" "}
           <Link
             href="/register"

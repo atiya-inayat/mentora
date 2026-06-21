@@ -33,7 +33,7 @@ export default function MentorCard({ mentor }) {
   if (!mentor) return null;
 
   return (
-    <div className="group w-full max-w-sm overflow-hidden rounded-2xl border border-primary/20 bg-surface p-6 shadow-[inset_0_-2px_8px_-3px_#93A57E] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+    <div className="group w-full max-w-sm overflow-hidden rounded-2xl border border-primary/20 bg-surface p-6 shadow-[inset_0_-2px_8px_-3px_rgba(13,115,119,0.2)] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
       {" "}
       {/* top section */}
       <div className="flex items-start justify-between gap-4">
