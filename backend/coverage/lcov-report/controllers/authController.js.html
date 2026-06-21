@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">65.51% </span>
+                <span class="strong">65.9% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>114/174</span>
+                <span class='fraction'>116/176</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">65.31% </span>
+                <span class="strong">65.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>113/173</span>
+                <span class='fraction'>115/175</span>
             </div>
         
             
@@ -588,7 +588,9 @@
 <a name='L523'></a><a href='#L523'>523</a>
 <a name='L524'></a><a href='#L524'>524</a>
 <a name='L525'></a><a href='#L525'>525</a>
-<a name='L526'></a><a href='#L526'>526</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L526'></a><a href='#L526'>526</a>
+<a name='L527'></a><a href='#L527'>527</a>
+<a name='L528'></a><a href='#L528'>528</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -607,6 +609,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1132,8 +1136,10 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || <span class="branch
 <span class="cstat-no" title="statement not covered" >  console.warn("WARNING: JWT_SECRET and JWT_REFRESH_SECRET are the same. Use separate secrets for better security.");</span>
 }
 &nbsp;
-const ACCESS_TOKEN_EXPIRY = 15 * 60;
-const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60;
+const ACCESS_TOKEN_EXPIRY_SEC = 15 * 60;
+const REFRESH_TOKEN_EXPIRY_SEC = 7 * 24 * 60 * 60;
+const ACCESS_TOKEN_EXPIRY_MS = ACCESS_TOKEN_EXPIRY_SEC * 1000;
+const REFRESH_TOKEN_EXPIRY_MS = REFRESH_TOKEN_EXPIRY_SEC * 1000;
 &nbsp;
 const hashToken = (token) =&gt; {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -1169,11 +1175,11 @@ const generateTokens = (user, tokenFamily = null) =&gt; {
   };
 &nbsp;
   const accessToken = jwt.sign(accessPayload, JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
+    expiresIn: ACCESS_TOKEN_EXPIRY_SEC,
   });
 &nbsp;
   const refreshToken = jwt.sign(refreshPayload, JWT_REFRESH_SECRET, {
-    expiresIn: REFRESH_TOKEN_EXPIRY,
+    expiresIn: REFRESH_TOKEN_EXPIRY_SEC,
   });
 &nbsp;
   return { accessToken, refreshToken, tokenFamily: family };
@@ -1186,7 +1192,7 @@ const saveRefreshToken = async (userId, token, tokenFamily, userAgent, ipAddress
     userId,
     token: hashedToken,
     tokenFamily,
-    expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY * 1000),
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
     userAgent,
     ipAddress,
   });
@@ -1291,8 +1297,8 @@ export const register = async function (req, res) {
       req.ip
     );
 &nbsp;
-    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY));
-    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY));
+    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
+    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY_MS));
 &nbsp;
     return res.status(201).json({
       success: true,
@@ -1370,8 +1376,8 @@ export const login = async function (req, res) {
       req.ip
     );
 &nbsp;
-    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY));
-    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY));
+    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
+    res.cookie("refreshToken", refreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY_MS));
 &nbsp;
     return res.status(200).json({
       success: true,
@@ -1487,8 +1493,8 @@ export const refreshToken = async function (req, res) {
       user
     );
 &nbsp;
-    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY));
-    res.cookie("refreshToken", newRefreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY));
+    res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
+    res.cookie("refreshToken", newRefreshToken, getCookieOptions(REFRESH_TOKEN_EXPIRY_MS));
 &nbsp;
     return res.status(200).json({
       success: true,
@@ -1645,7 +1651,7 @@ export const revokeAllSessions = <span class="fstat-no" title="function not cove
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-03T06:49:29.151Z
+                at 2026-06-21T05:44:48.705Z
             </div>
         <script src="../prettify.js"></script>
         <script>
