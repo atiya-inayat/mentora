@@ -5,10 +5,8 @@ let socket = null;
 export const getSocket = () => {
   if (!socket) {
     socket = io(process.env.NEXT_PUBLIC_API_URL, {
-      auth: {
-        token: localStorage.getItem("token"),
-      },
       autoConnect: false,
+      withCredentials: true,
     });
   }
   return socket;

@@ -69,7 +69,9 @@ const isProtectedRoute = (pathname) => {
     pathname.startsWith("/admin/dashboard") ||
     pathname.startsWith("/my-bookings") ||
     pathname.startsWith("/my-sessions") ||
-    pathname.startsWith("/settings")
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/payment/") ||
+    pathname.startsWith("/review/")
   );
 };
 
@@ -149,6 +151,9 @@ export const config = {
     "/register",
     // Match settings
     "/settings/:path*",
+    // Match payment and review
+    "/payment/:path*",
+    "/review/:path*",
   ],
 };
 

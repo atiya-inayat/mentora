@@ -21,7 +21,7 @@ export const useCreateBooking = () => {
 
   return useMutation({
     mutationFn: async ({ mentorId, scheduledAt }) => {
-      const res = await api.post(`/bookings/${mentorId}`, { scheduledAt });
+      const res = await api.post(`/api/bookings/${mentorId}`, { scheduledAt });
       return res.data;
     },
     onSuccess: () => {

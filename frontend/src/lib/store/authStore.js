@@ -43,6 +43,8 @@ const useAuthStore = create((set, get) => ({
       }
 
       return response.data;
+    } catch (error) {
+      throw error;
     } finally {
       set({ isLoading: false });
     }
