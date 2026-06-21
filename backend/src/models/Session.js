@@ -10,13 +10,23 @@ const sessionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "ongoing", "completed"],
+      enum: ["pending", "ongoing", "completed", "expired"],
       default: "pending",
     },
+
     startTime: {
       type: Date,
     },
+
     endTime: {
+      type: Date,
+    },
+
+    scheduledAt: {
+      type: Date,
+    },
+
+    expiresAt: {
       type: Date,
     },
   },
