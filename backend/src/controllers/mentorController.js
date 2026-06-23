@@ -40,10 +40,14 @@ export const createMentorProfile = async (req, res) => {
 
 export const getMyProfile = async (req, res) => {
   try {
-    const profile = await MentorProfile.findOne({ userId: req.user._id }).populate("userId", "name role");
+    const profile = await MentorProfile.findOne({
+      userId: req.user._id,
+    }).populate("userId", "name role");
 
     if (!profile) {
-      return res.status(404).json({ success: false, message: "No mentor profile found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "No mentor profile found" });
     }
 
     return res.status(200).json({ success: true, data: profile });
@@ -72,7 +76,7 @@ export const getAllMentors = async (req, res) => {
       message: "Error fetching mentors",
     });
   }
-};
+}; //
 
 export const getMentorById = async (req, res) => {
   try {
@@ -88,7 +92,9 @@ export const getMentorById = async (req, res) => {
       .populate("userId", "name email");
 
     if (!mentor) {
-      return res.status(404).json({ success: false, message: "Mentor not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Mentor not found" });
     }
 
     return res.status(200).json({ success: true, data: mentor });
