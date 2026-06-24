@@ -76,7 +76,7 @@ export const getAllMentors = async (req, res) => {
       message: "Error fetching mentors",
     });
   }
-}; //
+}; // helo
 
 export const getMentorById = async (req, res) => {
   try {
