@@ -106,7 +106,7 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-**Frontend `.env.local`**
+**Frontend `.env.local`** 
 ```
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
