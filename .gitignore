@@ -1,6 +1,6 @@
 AUTHENTICATION_IMPLEMENTATION_PLAN.md
 IMPLEMENTATION_CHECKLIST.md
 QUICK_START.md
-.node_modules/.bin
+node_modules/
 .prettierignore
 .prettierrc
