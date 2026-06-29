@@ -5,16 +5,9 @@ import { useRouter } from "next/navigation";
 import Footer from "./components/Footer";
 import AllMentors from "./components/mentor/AllMentors";
 import Navbar from "./components/shared/Navbar";
-import {
-  FaAirbnb,
-  FaAmazon,
-  FaSpotify,
-  FaUber,
-  FaMeta,
-  FaMicrosoft,
-} from "react-icons/fa6";
+import { FaAirbnb, FaAmazon, FaSpotify, FaUber, FaMeta, FaMicrosoft } from "react-icons/fa6";
 import Image from "next/image";
-import { Check } from "lucide-react";
+import { Check, Search } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
@@ -74,47 +67,44 @@ export default function Home() {
       <Navbar />
 
       {/* HERO */}
-      <section className="px-4 py-16 mx-auto sm:px-6 lg:px-8 max-w-7xl md:py-24">
-        <div className="max-w-5xl mx-auto text-center">
-          <span className="inline-flex px-4 py-2 text-xs border rounded-full sm:text-sm bg-surface/60 border-primary/20 text-primary/80">
-            Trusted by thousands of learners worldwide
-          </span>
-
-          <h1 className="mt-8 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl md:text-6xl text-primary">
-            What do you want to
-            <br className="hidden sm:block" />
-            achieve next?
+      <section className="px-4 pt-20 pb-16 mx-auto sm:px-6 lg:px-8 max-w-7xl md:pt-28 md:pb-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl text-primary">
+            Find your
+            <br />
+            next mentor.
           </h1>
 
-          <p className="max-w-2xl mx-auto mt-6 text-base leading-7 sm:text-lg text-primary/70">
-            Get practical guidance from mentors who have already done it. Build
-            confidence, grow faster, and unlock your next opportunity.
+          <p className="max-w-2xl mx-auto mt-6 text-lg leading-8 text-white/50">
+            Break through plateaus with honest feedback and guidance from a mentor who has been
+            exactly where you are.
           </p>
 
           {/* SEARCH BOX */}
-          <div className="p-4 mt-10 border shadow-xl rounded-3xl bg-primary border-primary/30 md:p-6">
+          <div className="p-5 mt-12 glass-card rounded-3xl md:p-6">
             <div className="flex flex-col gap-4 lg:flex-row">
-              <input
-                type="text"
-                placeholder={`${text}|`}
-                className="w-full px-5 py-4 text-sm outline-none rounded-2xl bg-background/90 text-primary placeholder:text-primary/60"
-              />
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                <input
+                  type="text"
+                  placeholder={`${text}|`}
+                  className="w-full pl-12 pr-5 py-4 text-sm outline-none rounded-2xl bg-white/[0.04] text-primary placeholder:text-white/30 border border-white/5 focus:border-primary transition-colors"
+                />
+              </div>
 
-              <button onClick={() => router.push("/mentors")} className="px-6 py-4 font-medium transition-all rounded-2xl bg-surface text-primary hover:scale-[1.02] hover:shadow-lg">
+              <button
+                onClick={() => router.push("/mentors")}
+                className="px-8 py-4 font-semibold transition-all rounded-2xl bg-primary text-white hover:opacity-90 text-sm"
+              >
                 Find Mentor
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-              {[
-                "Ace Interviews",
-                "Switch Careers",
-                "Lead Teams",
-                "Start a Company",
-              ].map((item) => (
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+              {["Ace Interviews", "Switch Careers", "Lead Teams", "Start a Company"].map((item) => (
                 <span
                   key={item}
-                  className="px-4 py-2 text-sm rounded-full bg-background/20 text-background"
+                  className="px-3 py-1.5 text-xs rounded-full bg-white/[0.06] text-white/60 border border-white/5 hover:bg-white/[0.10] transition-colors cursor-default"
                 >
                   {item}
                 </span>
@@ -125,16 +115,14 @@ export default function Home() {
       </section>
 
       {/* COMPANIES */}
-      <section className="py-10 border-y border-primary/10">
+      <section className="py-10 border-y border-white/10">
         <div className="flex flex-wrap items-center justify-center max-w-6xl gap-10 px-6 mx-auto sm:gap-16">
-          {[FaAirbnb, FaAmazon, FaMeta, FaMicrosoft, FaSpotify, FaUber].map(
-            (Icon, index) => (
-              <Icon
-                key={index}
-                className="text-4xl transition sm:text-5xl text-primary/60 hover:text-primary"
-              />
-            ),
-          )}
+          {[FaAirbnb, FaAmazon, FaMeta, FaMicrosoft, FaSpotify, FaUber].map((Icon, index) => (
+            <Icon
+              key={index}
+              className="text-4xl transition sm:text-5xl text-white/40 hover:text-primary"
+            />
+          ))}
         </div>
       </section>
 
@@ -146,10 +134,9 @@ export default function Home() {
             <br />a dedicated career coach
           </h2>
 
-          <p className="mt-6 text-base leading-8 text-primary/70">
-            Learn high-demand skills with guidance from experienced mentors.
-            Start your dream career, build your startup, and grow faster with
-            personalized mentorship.
+          <p className="mt-6 text-base leading-8 text-white/60">
+            Learn high-demand skills with guidance from experienced mentors. Start your dream
+            career, build your startup, and grow faster with personalized mentorship.
           </p>
 
           <div className="grid gap-4 mt-10 sm:grid-cols-2">
@@ -163,27 +150,25 @@ export default function Home() {
             ].map((item) => (
               <div
                 key={item}
-                className="flex items-center gap-3 p-4 border rounded-2xl bg-surface/70 border-primary/10"
+                className="flex items-center gap-3 p-4 glass-card rounded-2xl"
               >
-                <Check className="p-1 rounded-full shrink-0 bg-primary text-background" />
+                <Check className="p-1 rounded-full shrink-0 bg-primary text-white" />
 
-                <h3 className="text-sm font-medium text-primary/80">{item}</h3>
+                <h3 className="text-sm font-medium text-white/70">{item}</h3>
               </div>
             ))}
           </div>
 
-          <button onClick={() => router.push("/mentors")} className="px-6 py-3 mt-8 font-medium transition-all rounded-2xl bg-primary text-background hover:scale-[1.02]">
+          <button
+            onClick={() => router.push("/mentors")}
+            className="px-6 py-3 mt-8 font-medium transition-all rounded-2xl bg-primary text-white hover:scale-[1.02]"
+          >
             Browse Mentors
           </button>
         </div>
 
         <div className="relative h-[300px] sm:h-[450px] overflow-hidden rounded-3xl shadow-2xl">
-          <Image
-            src="/explainer.webp"
-            alt="explainer"
-            fill
-            className="object-cover"
-          />
+          <Image src="/explainer.webp" alt="explainer" fill className="object-cover" />
         </div>
       </section>
 
@@ -197,11 +182,11 @@ export default function Home() {
           ].map(([number, label]) => (
             <div
               key={label}
-              className="p-8 text-center border shadow-xl rounded-3xl bg-surface border-primary/10"
+              className="p-8 text-center glass-card rounded-3xl shadow-xl"
             >
               <h2 className="text-4xl font-bold text-primary">{number}</h2>
 
-              <p className="mt-3 text-primary/70">{label}</p>
+              <p className="mt-3 text-white/60">{label}</p>
             </div>
           ))}
         </div>
@@ -212,8 +197,7 @@ export default function Home() {
         <p className="text-3xl text-yellow-500">★★★★★</p>
 
         <h2 className="mt-8 text-2xl leading-10 sm:text-3xl text-primary/90">
-          “Having access to experienced mentors helped me finally land my dream
-          role at Tesla.”
+          “Having access to experienced mentors helped me finally land my dream role at Tesla.”
         </h2>
 
         <div className="flex items-center justify-center gap-4 mt-10">
@@ -224,9 +208,7 @@ export default function Home() {
           <div className="text-left">
             <h3 className="font-semibold text-primary">Michele Verrielo</h3>
 
-            <p className="text-sm text-primary/70">
-              Software Engineer at Tesla
-            </p>
+            <p className="text-sm text-white/60">Software Engineer at Tesla</p>
           </div>
         </div>
       </section>
@@ -247,28 +229,19 @@ export default function Home() {
               <div key={index} className="relative md:pl-20">
                 <div className="absolute hidden w-5 h-5 border-4 rounded-full md:block left-4 top-10 bg-primary border-background" />
 
-                <div className="grid items-center gap-8 p-6 border shadow-xl rounded-3xl bg-surface border-primary/10 lg:grid-cols-2">
+                <div className="grid items-center gap-8 p-6 glass-card rounded-3xl shadow-xl lg:grid-cols-2">
                   <div className="relative h-64 overflow-hidden rounded-2xl bg-background">
-                    <Image
-                      src={item.image}
-                      alt="step"
-                      fill
-                      className="object-contain p-6"
-                    />
+                    <Image src={item.image} alt="step" fill className="object-contain p-6" />
                   </div>
 
                   <div>
-                    <span className="text-sm font-medium text-primary/50">
-                      Step {index + 1}
-                    </span>
+                    <span className="text-sm font-medium text-white/40">Step {index + 1}</span>
 
-                    <h3 className="mt-3 text-2xl font-semibold text-primary">
-                      {item.text}
-                    </h3>
+                    <h3 className="mt-3 text-2xl font-semibold text-primary">{item.text}</h3>
 
-                    <p className="mt-4 leading-8 text-primary/70">
-                      Personalized mentorship designed to help you move faster
-                      and make smarter career decisions.
+                    <p className="mt-4 leading-8 text-white/60">
+                      Personalized mentorship designed to help you move faster and make smarter
+                      career decisions.
                     </p>
                   </div>
                 </div>
@@ -278,65 +251,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* EXPLORE */}
-      <section className="max-w-4xl px-4 py-20 mx-auto text-center sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-semibold sm:text-4xl md:text-5xl text-primary">
-          Explore 7,000+ available mentors
-        </h2>
-
-        <form className="flex flex-col gap-4 mt-10 md:flex-row">
-          <input
-            type="text"
-            placeholder="Search by company, skills or role"
-            className="flex-1 px-5 py-4 border shadow-lg outline-none rounded-2xl bg-surface/60 border-primary/20 placeholder:text-primary/50"
-          />
-
-          <button onClick={() => router.push("/mentors")} className="px-6 py-4 font-medium transition-all rounded-2xl bg-primary text-background hover:scale-[1.02]">
-            Find Mentors
-          </button>
-        </form>
-      </section>
-
       {/* MENTORS */}
-      <section className="px-4 py-20 mx-auto sm:px-6 lg:px-8 max-w-7xl">
-        <div className="mb-10 text-center md:text-left">
-          <h2 className="text-3xl font-semibold sm:text-4xl text-primary">
-            All Mentors
+      <section className="px-4 py-24 mx-auto sm:px-6 lg:px-8 max-w-7xl">
+        <div className="mb-12 text-center">
+          <h2 className="text-3xl font-semibold sm:text-4xl md:text-5xl text-primary">
+            Explore 7,000+ available mentors
           </h2>
 
-          <p className="mt-3 text-primary/70">
-            Learn from experienced industry professionals.
-          </p>
+          <p className="mt-4 text-white/50">Learn from experienced industry professionals.</p>
         </div>
 
         <AllMentors />
-      </section>
 
-      {/* FINAL CTA */}
-      <section className="px-4 py-20 mx-auto sm:px-6 lg:px-8 max-w-7xl">
-        <div className="relative overflow-hidden border shadow-2xl rounded-3xl bg-surface border-primary/20">
-          <div className="absolute top-0 right-0 rounded-full w-72 h-72 bg-primary/10 blur-3xl" />
-
-          <div className="relative z-10 p-6 md:p-12">
-            <div className="max-w-3xl">
-              <span className="inline-flex px-4 py-2 text-sm border rounded-full bg-background border-primary/20 text-primary">
-                Trusted by thousands of learners
-              </span>
-
-              <h2 className="mt-6 text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl text-primary">
-                An arsenal of industry veterans and mentoring packages
-              </h2>
-
-              <p className="mt-6 leading-8 text-primary/70">
-                Pick from a curated collection of mentors and services. Grow
-                faster with personalized mentorship.
-              </p>
-            </div>
-
-            <div className="overflow-hidden mt-14">
-              <AllMentors />
-            </div>
-          </div>
+        <div className="mt-12 text-center">
+          <button
+            onClick={() => router.push("/mentors")}
+            className="px-8 py-3.5 font-semibold transition-all rounded-2xl glass-card text-primary hover:bg-white/[0.08] text-sm"
+          >
+            View all mentors →
+          </button>
         </div>
       </section>
 

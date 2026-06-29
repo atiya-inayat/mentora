@@ -5,6 +5,7 @@ import Payment from "../models/Payment.js";
 import MentorProfile from "../models/MentorProfile.js";
 import stripe from "../config/stripe.js";
 import { getIO } from "../socket/socketEmitter.js";
+import { sendNotification } from "./notificationController.js";
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 const SESSION_DURATION_MS = 60 * 60 * 1000;
@@ -16,7 +17,9 @@ const computeTimeStatus = (session) => {
   if (!session.scheduledAt) return "active";
 
   const scheduledAt = new Date(session.scheduledAt);
-  const expiresAt = session.expiresAt ? new Date(session.expiresAt) : new Date(scheduledAt.getTime() + SESSION_DURATION_MS);
+  const expiresAt = session.expiresAt
+    ? new Date(session.expiresAt)
+    : new Date(scheduledAt.getTime() + SESSION_DURATION_MS);
 
   if (now > expiresAt) return "expired";
   if (now >= scheduledAt) return "active";
@@ -54,7 +57,9 @@ export const startSession = async (req, res) => {
     }
 
     if (booking.status !== "payment_held") {
-      return res.status(400).json({ success: false, message: "Booking must be accepted before starting session" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Booking must be accepted before starting session" });
     }
 
     if (booking.mentorId.toString() !== mentorId.toString()) {
@@ -100,6 +105,14 @@ export const startSession = async (req, res) => {
       });
     }
 
+    sendNotification({
+      userId: booking.menteeId,
+      type: "session_started",
+      title: "Session Started",
+      message: "Your mentoring session has started! Join now.",
+      link: `/session/${session._id}`,
+    });
+
     return res.status(200).json({ success: true, data: session });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -121,7 +134,9 @@ export const endSession = async (req, res) => {
     }
 
     if (booking.mentorId.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: "Only the mentor can end the session" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Only the mentor can end the session" });
     }
 
     const session = await Session.findOne({ bookingId });
@@ -139,7 +154,9 @@ export const endSession = async (req, res) => {
       { new: true },
     );
     if (!payment) {
-      return res.status(400).json({ success: false, message: "Payment already released or not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Payment already released or not found" });
     }
 
     session.status = "completed";
@@ -174,6 +191,14 @@ export const endSession = async (req, res) => {
     payment.status = "released";
     await payment.save();
 
+    sendNotification({
+      userId: booking.menteeId,
+      type: "session_ended",
+      title: "Session Ended",
+      message: "Your mentoring session has ended. Please leave a review!",
+      link: `/review/${booking._id}`,
+    });
+
     return res.status(200).json({
       success: true,
       data: session,
@@ -190,7 +215,9 @@ export const postponeSession = async (req, res) => {
     const userId = req.user._id;
 
     if (!newScheduledAt) {
-      return res.status(400).json({ success: false, message: "New scheduled date/time is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "New scheduled date/time is required" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(bookingId)) {
@@ -203,7 +230,9 @@ export const postponeSession = async (req, res) => {
     }
 
     if (booking.mentorId.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: "Only the mentor can postpone this session" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Only the mentor can postpone this session" });
     }
 
     const session = await Session.findOne({ bookingId });

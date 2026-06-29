@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import useAuthStore from "@/lib/store/authStore";
 import { Eye, EyeOff } from "lucide-react";
+import usePageTitle from "@/lib/hooks/usePageTitle";
 
 // Validation Schema
 const loginSchema = z.object({
@@ -18,12 +19,10 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const router = useRouter();
+  usePageTitle("Login");
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-
-  // Redirect URL
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
 
   // Auth Store
   const { login, isLoading } = useAuthStore();
@@ -39,59 +38,6 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  // Submit Handler
-  // const onSubmit = async (data) => {
-  //   try {
-  //     const result = await login(data);
-
-  //     if (result.success) {
-  //       const roleRoutes = {
-  //         admin: "/admin/dashboard",
-  //         mentee: "/dashboard",
-  //         mentor: "/mentor/dashboard",
-  //       };
-
-  //       router.push(roleRoutes[result.user?.role] || redirectTo);
-  //     }
-  //   } catch (error) {
-  //     const message =
-  //       error?.response?.data?.message || "Login failed. Please try again.";
-
-  //     setError("root", { message });
-  //   }
-  // };
-  // const onSubmit = async (data) => {
-  //   try {
-  //     const result = await login(data);
-
-  //     // 🔍 Quick debug check to see what your auth store actually outputs
-  //     console.log("Login Store Result:", result);
-
-  //     if (result.success) {
-  //       const roleRoutes = {
-  //         admin: "/admin/dashboard",
-  //         mentee: "/dashboard",
-  //         mentor: "/mentor/dashboard",
-  //       };
-
-  //       // 1. First, check if there is an explicit URL parameter redirect
-  //       // 2. Second, try the user's role-based dashboard
-  //       // 3. Fallback to a safe hardcoded path
-  //       const targetDestination =
-  //         searchParams.get("redirect") ||
-  //         roleRoutes[result?.user?.role] ||
-  //         roleRoutes[result?.data?.user?.role] || // Check if nested in .data
-  //         "/dashboard";
-
-  //       router.push(targetDestination);
-  //       router.refresh(); // Forces Next.js to re-evaluate auth tokens/cookies
-  //     }
-  //   } catch (error) {
-  //     const message =
-  //       error?.response?.data?.message || "Login failed. Please try again.";
-  //     setError("root", { message });
-  //   }
-  // };
   const onSubmit = async (data) => {
     try {
       const result = await login(data);
@@ -100,125 +46,106 @@ export default function LoginPage() {
         queryClient.clear();
 
         const roleRoutes = {
-          admin: "/admin/dashboard",
+          admin: "/admin",
           mentee: "/dashboard",
           mentor: "/mentor/dashboard",
         };
 
-        // 1. Determine where they are supposed to go
         const targetDestination =
-          searchParams.get("redirect") ||
-          roleRoutes[result.user?.role] ||
-          "/dashboard";
+          searchParams.get("redirect") || roleRoutes[result.user?.role] || "/dashboard";
 
-        // 2. Give cross-origin cookies (Port 5000 -> Port 3000) a split second to save
         setTimeout(() => {
-          window.location.href = targetDestination;
+          router.push(targetDestination);
         }, 300);
       }
     } catch (error) {
-      const message =
-        error?.response?.data?.message || "Login failed. Please try again.";
+      const message = error?.response?.data?.message || "Login failed. Please try again.";
       setError("root", { message });
     }
   };
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-background">
-      <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-surface border-primary/20">
-        {/* Back to Home */}
-        <Link href="/" className="inline-flex items-center gap-1 mb-4 text-xs transition text-primary/60 hover:text-primary">
-          ← Back to Home
-        </Link>
-
+      <div className="w-full max-w-md p-6 glass-card rounded-2xl">
         {/* Header */}
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-primary font-poppins">
             Mentora
           </h1>
 
-          <p className="mt-1 text-sm text-primary/70">Login to your account</p>
+          <p className="mt-1 text-sm text-white/60">Login to your account</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Email */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-primary/80">
-              Email
-            </label>
+            <label className="block mb-1 text-sm font-medium text-white/70">Email</label>
 
             <input
               {...register("email")}
               type="email"
               placeholder="Enter your email"
-              className="w-full px-3 py-2 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
             />
 
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.email.message}
-              </p>
-            )}
+            {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
           </div>
 
           {/* Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-primary/80">
-              Password
-            </label>
+            <label className="block mb-1 text-sm font-medium text-white/70">Password</label>
 
             <div className="relative">
               <input
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                className="w-full px-3 py-2 pr-10 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none glass-input"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/60 hover:text-primary"
+                className="absolute -translate-y-1/2 right-3 top-1/2 text-white/40 hover:text-primary"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
             {errors.password && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.password.message}
-              </p>
+              <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
             )}
           </div>
 
           {/* Root Error */}
           {errors.root && (
-            <div className="p-2 border border-red-200 rounded-md bg-red-50">
+            <div className="p-2 border border-red-200 rounded-lg bg-red-50">
               <p className="text-xs text-red-600">{errors.root.message}</p>
             </div>
           )}
+
+          {/* Forgot Password */}
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-xs text-white/40 hover:text-primary">
+              Forgot password?
+            </Link>
+          </div>
 
           {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 text-sm font-medium text-white transition-colors rounded-md bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 text-sm font-medium text-white transition-colors btn-primary rounded-xl"
           >
             {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         {/* Footer */}
-        <p className="mt-5 text-sm text-center text-primary/70">
+        <p className="mt-5 text-sm text-center text-white/60">
           Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link href="/register" className="font-medium text-primary hover:underline">
             Register
           </Link>
         </p>

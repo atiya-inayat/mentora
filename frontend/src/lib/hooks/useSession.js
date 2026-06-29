@@ -50,7 +50,7 @@ export const useMySessions = () => {
   });
 
   const sessions = (data?.data || []).filter(
-    (b) => b.status === "payment_held" || b.status === "completed"
+    (b) => b.status === "payment_held" || b.status === "completed",
   );
 
   return { sessions, allBookings: data?.data || [], isLoading };

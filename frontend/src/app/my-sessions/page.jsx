@@ -7,16 +7,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner, CardSkeleton } from "@/app/components/shared/LoadingSkeleton";
 import { Calendar, User, MessageSquare, Play, AlertCircle, Clock } from "lucide-react";
+import usePageTitle from "@/lib/hooks/usePageTitle";
+import { toast } from "sonner";
 
 const statusLabels = {
-  upcoming: { label: "Upcoming", style: "bg-blue-100 text-blue-600" },
-  ready_to_start: { label: "Ready to Start", style: "bg-green-100 text-green-600" },
-  active: { label: "Active", style: "bg-primary/10 text-primary" },
-  expired: { label: "Expired", style: "bg-red-100 text-red-600" },
-  completed: { label: "Completed", style: "bg-gray-100 text-gray-500" },
+  upcoming: { label: "Upcoming", style: "bg-blue-500/10 text-blue-400" },
+  ready_to_start: { label: "Ready to Start", style: "bg-green-500/10 text-green-400" },
+  active: { label: "Active", style: "glass-badge" },
+  expired: { label: "Expired", style: "bg-red-500/10 text-red-400" },
+  completed: { label: "Completed", style: "bg-white/5 text-gray-400" },
 };
 
 export default function MySessionsPage() {
+  usePageTitle("My Sessions");
   const { user } = useAuthStore();
   const router = useRouter();
   const { data, isLoading } = useMyBookings();
@@ -27,7 +30,7 @@ export default function MySessionsPage() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="px-4 py-12 mx-auto max-w-4xl sm:px-6 lg:px-8">
-          <div className="h-8 rounded bg-primary/10 w-48 animate-pulse mb-8" />
+          <div className="h-8 rounded bg-white/[0.06] w-48 animate-pulse mb-8" />
           <CardSkeleton />
           <CardSkeleton />
         </div>
@@ -35,9 +38,7 @@ export default function MySessionsPage() {
     );
 
   const bookings = data?.data || [];
-  const sessions = bookings.filter(
-    (b) => b.status === "payment_held" || b.status === "completed"
-  );
+  const sessions = bookings.filter((b) => b.status === "payment_held" || b.status === "completed");
   const isMentor = user?.role === "mentor";
 
   const handleStart = (booking) => {
@@ -47,7 +48,7 @@ export default function MySessionsPage() {
       onSuccess: (res) => {
         if (res?.data?._id) router.push(`/session/${res.data._id}`);
       },
-      onError: (err) => alert(err?.response?.data?.message || "Cannot start session"),
+      onError: (err) => toast.error(err?.response?.data?.message || "Cannot start session"),
     });
   };
 
@@ -55,17 +56,22 @@ export default function MySessionsPage() {
     <main className="min-h-screen bg-background">
       <Navbar />
       <div className="px-4 py-12 mx-auto max-w-4xl sm:px-6 lg:px-8">
-        <Link href={isMentor ? "/mentor/dashboard" : "/dashboard"} className="inline-flex items-center gap-1 mb-2 text-xs transition text-primary/60 hover:text-primary">
+        <Link
+          href={isMentor ? "/mentor/dashboard" : "/dashboard"}
+          className="inline-flex items-center gap-1 mb-2 text-xs transition text-white/40 hover:text-primary"
+        >
           ← Back to Dashboard
         </Link>
         <h1 className="mb-2 text-3xl font-semibold text-primary font-fugaz">My Sessions</h1>
-        <p className="mb-8 text-primary/70">
-          {isMentor ? "Manage your active and completed mentoring sessions" : "View your upcoming and past mentoring sessions"}
+        <p className="mb-8 text-white/60">
+          {isMentor
+            ? "Manage your active and completed mentoring sessions"
+            : "View your upcoming and past mentoring sessions"}
         </p>
 
         {sessions.length === 0 ? (
-          <div className="p-12 text-center border shadow-lg rounded-2xl bg-surface border-primary/20">
-            <p className="text-primary/60">No sessions yet. Book a mentor to get started!</p>
+          <div className="p-12 text-center glass-card rounded-2xl">
+            <p className="text-white/40">No sessions yet. Book a mentor to get started!</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -80,23 +86,32 @@ export default function MySessionsPage() {
               const statusInfo = statusLabels[ts] || statusLabels.upcoming;
 
               return (
-                <div key={booking._id} className="p-6 border shadow-lg rounded-2xl bg-surface border-primary/20">
+                <div
+                  key={booking._id}
+                  className="p-6 glass-card rounded-2xl"
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-primary/60" />
+                        <User className="w-4 h-4 text-white/40" />
                         <p className="font-medium text-primary">{otherParty?.name || "Unknown"}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-primary/60" />
-                        <p className="text-sm text-primary/70">
+                        <Calendar className="w-4 h-4 text-white/40" />
+                        <p className="text-sm text-white/60">
                           {new Date(booking.scheduledAt).toLocaleDateString("en-US", {
-                            weekday: "long", year: "numeric", month: "long", day: "numeric",
-                            hour: "2-digit", minute: "2-digit",
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </p>
                       </div>
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${statusInfo.style}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${statusInfo.style}`}
+                      >
                         {ts === "expired" && <AlertCircle className="w-3 h-3" />}
                         {ts === "ready_to_start" && <Play className="w-3 h-3" />}
                         {statusInfo.label}
@@ -105,7 +120,7 @@ export default function MySessionsPage() {
 
                     <div className="flex items-center gap-2">
                       {ts === "upcoming" && (
-                        <div className="text-sm text-primary/50 px-2">
+                        <div className="text-sm text-white/40 px-2">
                           <Clock className="inline w-4 h-4 mr-1" />
                           {(() => {
                             const ms = new Date(booking.scheduledAt) - new Date();
@@ -118,7 +133,7 @@ export default function MySessionsPage() {
                       {isMentor && (ts === "ready_to_start" || ts === "active") && (
                         <button
                           onClick={() => handleStart(booking)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-primary text-background hover:opacity-90"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
                         >
                           <Play className="w-4 h-4" />
                           {ts === "active" ? "Join Session" : "Start Session"}
@@ -127,7 +142,7 @@ export default function MySessionsPage() {
                       {ts === "active" && (
                         <Link
                           href={`/session/${booking._id}`}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-white/[0.06] text-primary hover:bg-white/[0.10]"
                         >
                           <MessageSquare className="w-4 h-4" />
                           Chat

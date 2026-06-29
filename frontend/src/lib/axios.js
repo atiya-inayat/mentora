@@ -1,11 +1,11 @@
 /**
  * Production-Ready Axios Instance
- * 
+ *
  * Uses ONLY httpOnly cookie authentication:
  * - No token storage in localStorage/sessionStorage
  * - No Authorization header injection
  * - Uses withCredentials: true for automatic cookie transmission
- * 
+ *
  * Features:
  * - Automatic token refresh on 401
  * - Request retry after refresh
@@ -17,7 +17,7 @@ import axios from "axios";
 
 /**
  * Create axios instance with cookie-only auth
- * 
+ *
  * withCredentials: true - automatically sends cookies with requests
  * This is the ONLY way we transmit authentication
  */
@@ -61,7 +61,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 /**
@@ -127,7 +127,7 @@ api.interceptors.response.use(
 
     // Not a 401 or already retried - return error
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

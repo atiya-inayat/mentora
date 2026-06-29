@@ -11,9 +11,7 @@ export const creatReview = async (req, res) => {
     const { comment, rating } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid mentee id." });
+      return res.status(400).json({ success: false, message: "Invalid mentee id." });
     }
 
     const booking = await Booking.findById(bookingId);
@@ -73,8 +71,6 @@ export const creatReview = async (req, res) => {
 
     return res.status(201).json({ success: true, review });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "internal server error" });
+    return res.status(500).json({ success: false, message: "internal server error" });
   }
 };

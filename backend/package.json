@@ -4,11 +4,13 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest",
-    "test:watch": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --watch",
-    "test:coverage": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "test": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --runInBand",
+    "test:watch": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --runInBand --watch",
+    "test:coverage": "JWT_SECRET=test-jwt-secret-32chars!! JWT_REFRESH_SECRET=test-refresh-32chars!! MONGODB_URI=mongodb://localhost:27017/mentora_test NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --runInBand --coverage",
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "format": "prettier --write \"src/**/*.{js,mjs,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,mjs,json}\""
   },
   "keywords": [],
   "author": "",
@@ -16,6 +18,7 @@
   "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -25,10 +28,13 @@
     "mongoose": "^9.3.0",
     "multer": "^2.2.0",
     "socket.io": "^4.8.3",
-    "stripe": "^22.0.2"
+    "streamifier": "^0.1.1",
+    "stripe": "^22.0.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "prettier": "^3.9.1",
     "supertest": "^7.1.0"
   }
 }

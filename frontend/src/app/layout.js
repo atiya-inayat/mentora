@@ -1,14 +1,9 @@
-import {
-  Alfa_Slab_One,
-  Fugaz_One,
-  Geist,
-  Geist_Mono,
-  Pacifico,
-  Poppins,
-} from "next/font/google";
+import { Fugaz_One, Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "./providers/QueryProvider";
 import AuthProvider from "@/components/AuthProvider";
+import { ErrorBoundary } from "./components/shared/ErrorBoundary";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,27 +21,16 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-const pacifico = Pacifico({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-pacifico",
-});
-
 const fugaz = Fugaz_One({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-fugaz",
 });
 
-const alfa = Alfa_Slab_One({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-alfa",
-});
-
 export const metadata = {
   title: "Mentora — Mentorship Marketplace",
-  description: "Connect with expert mentors, book 1-on-1 sessions, and accelerate your learning journey.",
+  description:
+    "Connect with expert mentors, book 1-on-1 sessions, and accelerate your learning journey.",
 };
 
 export default function RootLayout({ children }) {
@@ -54,14 +38,15 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable}
-        ${pacifico.variable}
-        ${fugaz.variable}
-        ${alfa.variable} h-full antialiased`}
+        ${fugaz.variable} h-full antialiased`}
     >
-      <body className="flex flex-col min-h-full">
+      <body className="flex flex-col min-h-full font-sans">
         <AuthProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </QueryProvider>
         </AuthProvider>
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

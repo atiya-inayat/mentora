@@ -45,7 +45,7 @@ function PaymentForm({ bookingId, onSuccess, onConfirm }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="p-6 border rounded-2xl bg-background border-primary/20">
+      <div className="p-6 border rounded-2xl bg-background border-white/5">
         <PaymentElement />
       </div>
 
@@ -59,7 +59,7 @@ function PaymentForm({ bookingId, onSuccess, onConfirm }) {
       <button
         type="submit"
         disabled={!stripe || processing}
-        className="w-full py-3 font-medium transition-all rounded-xl bg-primary text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3 font-medium transition-all btn-primary rounded-xl"
       >
         {processing ? "Processing..." : "Pay Now"}
       </button>
@@ -75,9 +75,7 @@ export default function PaymentPage() {
   const [clientSecret, setClientSecret] = useState("");
   const [error, setError] = useState("");
 
-  const booking = (bookingsData?.data || []).find(
-    (b) => b._id === bookingId
-  );
+  const booking = (bookingsData?.data || []).find((b) => b._id === bookingId);
 
   useEffect(() => {
     if (paymentData?.clientSecret) {
@@ -99,7 +97,7 @@ export default function PaymentPage() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh] px-4">
-          <p className="text-primary/60">Loading booking details...</p>
+          <p className="text-white/40">Loading booking details...</p>
         </div>
       </main>
     );
@@ -110,19 +108,15 @@ export default function PaymentPage() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[80vh] px-4">
-          <div className="w-full max-w-md p-8 text-center border shadow-lg rounded-3xl bg-surface border-primary/20">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+          <div className="w-full max-w-md p-8 text-center glass-card rounded-3xl">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/[0.06]">
               <CheckCircle className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="mt-4 text-2xl font-semibold text-primary">
-              Payment Complete
-            </h2>
-            <p className="mt-2 text-primary/70">
-              Your session has been confirmed
-            </p>
+            <h2 className="mt-4 text-2xl font-semibold text-primary">Payment Complete</h2>
+            <p className="mt-2 text-white/60">Your session has been confirmed</p>
             <Link
               href="/my-bookings"
-              className="inline-block mt-6 px-5 py-2.5 text-sm font-medium rounded-full bg-primary text-background hover:opacity-90"
+              className="inline-block mt-6 px-5 py-2.5 text-sm font-medium btn-primary rounded-full"
             >
               Back to Bookings
             </Link>
@@ -139,24 +133,22 @@ export default function PaymentPage() {
       <div className="px-4 py-12 mx-auto max-w-lg sm:px-6 lg:px-8">
         <Link
           href="/my-bookings"
-          className="inline-flex items-center gap-2 mb-8 text-sm font-medium transition text-primary/60 hover:text-primary"
+          className="inline-flex items-center gap-2 mb-8 text-sm font-medium transition text-white/40 hover:text-primary"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to bookings
         </Link>
 
-        <div className="p-8 border shadow-lg rounded-3xl bg-surface border-primary/20">
+        <div className="p-8 glass-card rounded-3xl">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary">
-              <CreditCard className="w-7 h-7 text-background" />
+              <CreditCard className="w-7 h-7 text-white" />
             </div>
             <h1 className="mt-4 text-2xl font-semibold text-primary font-fugaz">
               Complete Payment
             </h1>
-            <p className="mt-1 text-sm text-primary/70">
-              Session with {booking.mentorId?.name}
-            </p>
-            <p className="text-sm text-primary/70">
+            <p className="mt-1 text-sm text-white/60">Session with {booking.mentorId?.name}</p>
+            <p className="text-sm text-white/60">
               {new Date(booking.scheduledAt).toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "long",
@@ -178,7 +170,7 @@ export default function PaymentPage() {
               <button
                 onClick={handleInitiate}
                 disabled={isPending}
-                className="w-full py-3 font-medium transition-all rounded-xl bg-primary text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 font-medium transition-all btn-primary rounded-xl"
               >
                 {isPending ? "Preparing payment..." : "Proceed to Pay"}
               </button>

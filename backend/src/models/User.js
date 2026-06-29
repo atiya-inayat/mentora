@@ -22,9 +22,21 @@ const userSchema = new mongoose.Schema(
       enum: ["mentee", "mentor", "admin"],
       default: "mentee",
     },
+    photo: {
+      type: String,
+      default: null,
+    },
     isBlocked: {
       type: Boolean,
       default: false,
+    },
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
     },
   },
   {

@@ -17,9 +17,7 @@ export default function ReviewPage() {
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const booking = (bookingsData?.data || []).find(
-    (b) => b._id === bookingId
-  );
+  const booking = (bookingsData?.data || []).find((b) => b._id === bookingId);
 
   const { mutate: submitReview, isPending } = useMutation({
     mutationFn: async () => {
@@ -37,7 +35,7 @@ export default function ReviewPage() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh] px-4">
-          <p className="text-primary/60">Loading...</p>
+          <p className="text-white/40">Loading...</p>
         </div>
       </main>
     );
@@ -48,19 +46,15 @@ export default function ReviewPage() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[80vh] px-4">
-          <div className="w-full max-w-md p-8 text-center border shadow-lg rounded-3xl bg-surface border-primary/20">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+          <div className="w-full max-w-md p-8 text-center glass-card rounded-3xl">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/[0.06]">
               <CheckCircle className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="mt-4 text-2xl font-semibold text-primary">
-              Review Submitted!
-            </h2>
-            <p className="mt-2 text-primary/70">
-              Thank you for your feedback
-            </p>
+            <h2 className="mt-4 text-2xl font-semibold text-primary">Review Submitted!</h2>
+            <p className="mt-2 text-white/60">Thank you for your feedback</p>
             <Link
               href="/my-bookings"
-              className="inline-block mt-6 px-5 py-2.5 text-sm font-medium rounded-full bg-primary text-background hover:opacity-90"
+              className="inline-block mt-6 px-5 py-2.5 text-sm font-medium btn-primary rounded-full"
             >
               Back to Bookings
             </Link>
@@ -77,16 +71,16 @@ export default function ReviewPage() {
       <div className="px-4 py-12 mx-auto max-w-lg sm:px-6 lg:px-8">
         <Link
           href="/my-bookings"
-          className="inline-flex items-center gap-1 mb-4 text-xs transition text-primary/60 hover:text-primary"
+          className="inline-flex items-center gap-1 mb-4 text-xs transition text-white/40 hover:text-primary"
         >
           ← Back to Bookings
         </Link>
 
-        <div className="p-8 border shadow-lg rounded-3xl bg-surface border-primary/20">
+        <div className="p-8 glass-card rounded-3xl">
           <h1 className="mb-2 text-2xl font-semibold text-center text-primary font-fugaz">
             Review Your Session
           </h1>
-          <p className="mb-6 text-sm text-center text-primary/70">
+          <p className="mb-6 text-sm text-center text-white/60">
             How was your session with {booking.mentorId?.name}?
           </p>
 
@@ -116,13 +110,13 @@ export default function ReviewPage() {
             onChange={(e) => setComment(e.target.value)}
             placeholder="Share your experience (optional)..."
             rows={4}
-            className="w-full px-4 py-3 mb-6 text-sm border rounded-xl outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary text-primary placeholder:text-primary/50 resize-none"
+            className="w-full px-4 py-3 mb-6 text-sm border rounded-xl outline-none glass-input text-primary placeholder:text-white/40 resize-none"
           />
 
           <button
             onClick={() => submitReview()}
             disabled={rating === 0 || isPending}
-            className="w-full py-3 font-medium transition-all rounded-xl bg-primary text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 font-medium transition-all btn-primary rounded-xl"
           >
             {isPending ? "Submitting..." : "Submit Review"}
           </button>

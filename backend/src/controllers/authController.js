@@ -14,7 +14,9 @@ if (!JWT_SECRET) {
 }
 
 if (JWT_SECRET === JWT_REFRESH_SECRET) {
-  console.warn("WARNING: JWT_SECRET and JWT_REFRESH_SECRET are the same. Use separate secrets for better security.");
+  console.warn(
+    "WARNING: JWT_SECRET and JWT_REFRESH_SECRET are the same. Use separate secrets for better security.",
+  );
 }
 
 const ACCESS_TOKEN_EXPIRY_SEC = 15 * 60;
@@ -104,7 +106,7 @@ const rotateRefreshToken = async (oldToken, user) => {
   const updatedToken = await RefreshToken.findOneAndUpdate(
     { token: hashedOldToken, isRevoked: false },
     { isRevoked: true, revokedAt: new Date() },
-    { returnDocument: "before" }
+    { returnDocument: "before" },
   );
 
   if (!updatedToken) {
@@ -130,8 +132,18 @@ const revokeRefreshTokens = async (userId, tokenFamily = null) => {
 
 const clearAuthCookies = (res) => {
   const isSecure = process.env.NODE_ENV === "production" || process.env.SECURE_COOKIES === "true";
-  res.clearCookie("accessToken", { path: "/", httpOnly: true, secure: isSecure, sameSite: "strict" });
-  res.clearCookie("refreshToken", { path: "/", httpOnly: true, secure: isSecure, sameSite: "strict" });
+  res.clearCookie("accessToken", {
+    path: "/",
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: "strict",
+  });
+  res.clearCookie("refreshToken", {
+    path: "/",
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: "strict",
+  });
 };
 
 export const register = async function (req, res) {
@@ -175,7 +187,7 @@ export const register = async function (req, res) {
       refreshToken,
       tokenFamily,
       req.headers["user-agent"],
-      req.ip
+      req.ip,
     );
 
     res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
@@ -188,6 +200,7 @@ export const register = async function (req, res) {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
+        photo: newUser.photo,
       },
     });
   } catch (error) {
@@ -224,8 +237,7 @@ export const login = async function (req, res) {
     } else {
       try {
         await bcrypt.compare(password, dummyHash);
-      } catch {
-      }
+      } catch {}
     }
 
     if (!user || !isMatch) {
@@ -254,7 +266,7 @@ export const login = async function (req, res) {
       refreshToken,
       tokenFamily,
       req.headers["user-agent"],
-      req.ip
+      req.ip,
     );
 
     res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
@@ -267,6 +279,7 @@ export const login = async function (req, res) {
         name: user.name,
         email: user.email,
         role: user.role,
+        photo: user.photo,
       },
     });
   } catch (error) {
@@ -287,7 +300,7 @@ export const logout = async function (req, res) {
       const hashedToken = hashToken(refreshTokenValue);
       await RefreshToken.updateOne(
         { token: hashedToken },
-        { isRevoked: true, revokedAt: new Date() }
+        { isRevoked: true, revokedAt: new Date() },
       );
     }
 
@@ -371,7 +384,7 @@ export const refreshToken = async function (req, res) {
 
     const { accessToken, refreshToken: newRefreshToken } = await rotateRefreshToken(
       refreshTokenValue,
-      user
+      user,
     );
 
     res.cookie("accessToken", accessToken, getCookieOptions(ACCESS_TOKEN_EXPIRY_MS));
@@ -404,50 +417,13 @@ export const refreshToken = async function (req, res) {
 
 export const getMe = async function (req, res) {
   try {
-    const accessToken = req.cookies.accessToken;
-
-    if (!accessToken) {
-      return res.status(401).json({
-        success: false,
-        code: "NO_TOKEN",
-        message: "Not authenticated",
-      });
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(accessToken, JWT_SECRET);
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        code: "TOKEN_EXPIRED",
-        message: "Token expired",
-      });
-    }
-
-    if (decoded.type !== "access") {
-      return res.status(401).json({
-        success: false,
-        code: "INVALID_TOKEN_TYPE",
-        message: "Invalid token type",
-      });
-    }
-
-    const user = await User.findById(decoded.sub).select("-password");
+    const user = req.user;
 
     if (!user) {
       return res.status(401).json({
         success: false,
         code: "USER_NOT_FOUND",
         message: "User not found",
-      });
-    }
-
-    if (user.isBlocked) {
-      return res.status(403).json({
-        success: false,
-        code: "USER_BLOCKED",
-        message: "Account suspended",
       });
     }
 
@@ -458,6 +434,7 @@ export const getMe = async function (req, res) {
         name: user.name,
         email: user.email,
         role: user.role,
+        photo: user.photo,
       },
     });
   } catch (error) {

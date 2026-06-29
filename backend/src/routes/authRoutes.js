@@ -1,12 +1,12 @@
 /**
  * Auth Routes
- * 
+ *
  * All auth endpoints - no authentication required except /me
- * 
+ *
  * Public Routes:
  * - POST /register - Create new user
  * - POST /login - Authenticate user
- * 
+ *
  * Protected Routes (require valid access token):
  * - POST /refresh - Refresh access token (with rotation)
  * - POST /logout - End session
@@ -15,17 +15,19 @@
  * - POST /sessions/revoke - Revoke all sessions
  */
 
-import { 
-  login, 
-  register, 
-  logout, 
-  refreshToken, 
+import {
+  login,
+  register,
+  logout,
+  refreshToken,
   getMe,
   getSessions,
-  revokeAllSessions
+  revokeAllSessions,
 } from "../controllers/authController.js";
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
+import validate from "../middleware/validate.js";
+import { registerSchema, loginSchema } from "../validators/authValidators.js";
 
 const router = express.Router();
 
@@ -37,14 +39,14 @@ const router = express.Router();
  * Create new user account
  * Body: { name, email, password, role }
  */
-router.post("/register", register);
+router.post("/register", validate(registerSchema), register);
 
 /**
  * POST /api/auth/login
  * Authenticate user and create session
  * Body: { email, password }
  */
-router.post("/login", login);
+router.post("/login", validate(loginSchema), login);
 
 // ==================== PROTECTED ROUTES ====================
 // Require valid access token in cookies

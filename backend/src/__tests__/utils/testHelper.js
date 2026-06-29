@@ -5,7 +5,7 @@ export const createTestUser = async (overrides = {}) => {
   const defaultUser = {
     name: "Test User",
     email: "test@example.com",
-    password: "TestPass123",
+    password: "TestPass123!",
     role: "mentee",
   };
 
@@ -37,7 +37,7 @@ export const extractCsrfToken = (html) => {
 export const validRegisterData = {
   name: "New User",
   email: "newuser@example.com",
-  password: "StrongPass1",
+  password: "StrongPass1!",
   role: "mentee",
 };
 
@@ -46,10 +46,7 @@ export const weakPasswords = [
   "nouppercase1",
   "NOLOWERCASE1",
   "NoNumbers!",
+  "NoSpecialChar1",
 ];
 
-export const invalidEmails = [
-  "notanemail",
-  "@domain.com",
-  "user@",
-];
+export const invalidEmails = ["notanemail", "@domain.com", "user@"];

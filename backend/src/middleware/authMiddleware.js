@@ -1,8 +1,8 @@
 /**
  * Authentication Middleware
- * 
+ *
  * Protects routes by verifying the access token cookie
- * 
+ *
  * Flow:
  * 1. Extract accessToken from cookies
  * 2. Verify JWT signature and expiration
@@ -92,9 +92,9 @@ export const protect = async (req, res, next) => {
 
 /**
  * Role-based access control
- * 
+ *
  * Usage: restrictTo('admin', 'mentor')
- * 
+ *
  * Checks if authenticated user has required role
  * Returns 403 if user doesn't have permission
  */

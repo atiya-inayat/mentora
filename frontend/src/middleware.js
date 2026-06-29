@@ -31,7 +31,7 @@ const getToken = (cookies) => {
  * Role-based redirect paths
  */
 const ROLE_DASHBOARDS = {
-  admin: "/admin/dashboard",
+  admin: "/admin",
   mentor: "/mentor/dashboard",
   mentee: "/dashboard",
 };
@@ -50,7 +50,7 @@ const getRoleBasedRedirect = (pathname) => {
   // and return the appropriate dashboard path
 
   if (pathname.startsWith("/admin")) {
-    return "/admin/dashboard";
+    return "/admin";
   }
   if (pathname.startsWith("/mentor")) {
     return "/mentor/dashboard";
@@ -66,7 +66,7 @@ const isProtectedRoute = (pathname) => {
   return (
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/mentor/dashboard") ||
-    pathname.startsWith("/admin/dashboard") ||
+    pathname.startsWith("/admin") ||
     pathname.startsWith("/my-bookings") ||
     pathname.startsWith("/my-sessions") ||
     pathname.startsWith("/settings") ||

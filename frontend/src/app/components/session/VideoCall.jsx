@@ -4,10 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react";
 
 const STUN_SERVERS = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-  ],
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }],
 };
 
 export default function VideoCall({ socketRef, sessionId, isMentor, onCallEnded }) {
@@ -41,33 +38,36 @@ export default function VideoCall({ socketRef, sessionId, isMentor, onCallEnded 
     onCallEnded?.();
   }, [socketRef, sessionId, cleanupMedia, onCallEnded]);
 
-  const createPeerConnection = useCallback((stream) => {
-    const pc = new RTCPeerConnection(STUN_SERVERS);
+  const createPeerConnection = useCallback(
+    (stream) => {
+      const pc = new RTCPeerConnection(STUN_SERVERS);
 
-    stream.getTracks().forEach((track) => {
-      pc.addTrack(track, stream);
-    });
+      stream.getTracks().forEach((track) => {
+        pc.addTrack(track, stream);
+      });
 
-    pc.onicecandidate = (e) => {
-      if (e.candidate && socketRef.current) {
-        socketRef.current.emit("ice-candidate", { candidate: e.candidate, sessionId });
-      }
-    };
+      pc.onicecandidate = (e) => {
+        if (e.candidate && socketRef.current) {
+          socketRef.current.emit("ice-candidate", { candidate: e.candidate, sessionId });
+        }
+      };
 
-    pc.ontrack = (e) => {
-      setRemoteStream(e.streams[0]);
-      setWaiting(false);
-    };
+      pc.ontrack = (e) => {
+        setRemoteStream(e.streams[0]);
+        setWaiting(false);
+      };
 
-    pc.oniceconnectionstatechange = () => {
-      if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
-        cleanupMedia();
-      }
-    };
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
+          cleanupMedia();
+        }
+      };
 
-    pcRef.current = pc;
-    return pc;
-  }, [sessionId, socketRef, cleanupMedia]);
+      pcRef.current = pc;
+      return pc;
+    },
+    [sessionId, socketRef, cleanupMedia],
+  );
 
   const startCall = useCallback(async () => {
     try {
@@ -122,7 +122,7 @@ export default function VideoCall({ socketRef, sessionId, isMentor, onCallEnded 
         if (pcRef.current && candidate) {
           try {
             await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch { }
+          } catch {}
         }
       });
 

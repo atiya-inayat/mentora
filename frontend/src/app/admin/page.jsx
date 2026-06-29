@@ -2,18 +2,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import Navbar from "@/app/components/shared/Navbar";
-import {
-  Shield,
-  User,
-  ShieldBan,
-  ShieldCheck,
-  Search,
-} from "lucide-react";
+import { Shield, ShieldBan, ShieldCheck, Search } from "lucide-react";
+import Avatar from "@/app/components/shared/Avatar";
+import usePageTitle from "@/lib/hooks/usePageTitle";
 import { useState } from "react";
+import ConfirmDialog from "@/app/components/shared/ConfirmDialog";
 
 export default function AdminPanel() {
+  usePageTitle("Admin Panel");
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [blockTarget, setBlockTarget] = useState(null);
 
   const { data: usersData, isLoading } = useQuery({
     queryKey: ["admin", "users"],
@@ -44,7 +43,7 @@ export default function AdminPanel() {
         (u) =>
           u.name?.toLowerCase().includes(search.toLowerCase()) ||
           u.email?.toLowerCase().includes(search.toLowerCase()) ||
-          u.role?.toLowerCase().includes(search.toLowerCase())
+          u.role?.toLowerCase().includes(search.toLowerCase()),
       )
     : users;
 
@@ -55,42 +54,30 @@ export default function AdminPanel() {
       <div className="px-4 py-12 mx-auto max-w-6xl sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-2">
           <Shield className="w-7 h-7 text-primary" />
-          <h1 className="text-3xl font-semibold text-primary font-fugaz">
-            Admin Panel
-          </h1>
+          <h1 className="text-3xl font-semibold text-primary font-fugaz">Admin Panel</h1>
         </div>
-        <p className="mb-8 text-primary/70">
-          Manage users, block accounts, and approve mentors
-        </p>
+        <p className="mb-8 text-white/60">Manage users, block accounts, and approve mentors</p>
 
         <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/50" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or role..."
-            className="w-full px-4 py-3 pl-11 border rounded-xl outline-none bg-surface border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary text-primary placeholder:text-primary/50"
+            className="w-full px-4 py-3 pl-11 border rounded-xl outline-none bg-surface border-white/5 focus:border-primary focus:ring-1 focus:ring-primary text-primary placeholder:text-white/40"
           />
         </div>
 
-        <div className="overflow-hidden border shadow-lg rounded-3xl bg-surface border-primary/20">
+        <div className="overflow-hidden glass-card rounded-3xl">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-background border-primary/10">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">
-                    Name
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">
-                    Role
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">
-                    Status
-                  </th>
+                <tr className="border-b bg-background border-white/10">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Email</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Role</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Status</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-primary">
                     Actions
                   </th>
@@ -99,37 +86,28 @@ export default function AdminPanel() {
               <tbody className="divide-y divide-primary/10">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-12 text-center text-primary/50"
-                    >
+                    <td colSpan={5} className="px-6 py-12 text-center text-white/40">
                       No users found
                     </td>
                   </tr>
                 ) : (
                   filtered.map((u) => (
-                    <tr key={u._id} className="transition hover:bg-background/50">
+                    <tr key={u._id} className="transition hover:bg-white/[0.04]">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                            <User className="w-4 h-4 text-primary" />
-                          </div>
-                          <span className="font-medium text-primary">
-                            {u.name}
-                          </span>
+                          <Avatar src={u.photo} name={u.name} size="sm" />
+                          <span className="font-medium text-primary">{u.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-primary/70">
-                        {u.email}
-                      </td>
+                      <td className="px-6 py-4 text-sm text-white/60">{u.email}</td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-block px-3 py-1 text-xs font-medium rounded-full capitalize ${
                             u.role === "admin"
-                              ? "bg-purple-100 text-purple-700"
+                              ? "bg-purple-500/10 text-purple-400"
                               : u.role === "mentor"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-green-100 text-green-700"
+                                ? "bg-blue-500/10 text-blue-400"
+                                : "bg-green-500/10 text-green-400"
                           }`}
                         >
                           {u.role}
@@ -138,9 +116,7 @@ export default function AdminPanel() {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${
-                            u.isBlocked
-                              ? "bg-red-100 text-red-600"
-                              : "bg-primary/10 text-primary"
+                            u.isBlocked ? "bg-red-100 text-red-600" : "bg-white/[0.06] text-primary"
                           }`}
                         >
                           {u.isBlocked ? (
@@ -155,8 +131,8 @@ export default function AdminPanel() {
                         <div className="flex items-center justify-end gap-2">
                           {!u.isBlocked && (
                             <button
-                              onClick={() => blockUser(u._id)}
-                              className="px-3 py-1.5 text-xs font-medium transition rounded-full bg-red-100 text-red-600 hover:bg-red-200"
+                              onClick={() => setBlockTarget(u)}
+                              className="px-3 py-1.5 text-xs font-medium transition rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/[0.15]"
                             >
                               Block
                             </button>
@@ -164,7 +140,7 @@ export default function AdminPanel() {
                           {u.role === "mentor" && (
                             <button
                               onClick={() => approveMentor(u._id)}
-                              className="px-3 py-1.5 text-xs font-medium transition rounded-full bg-primary/10 text-primary hover:bg-primary/20"
+                              className="px-3 py-1.5 text-xs font-medium transition rounded-full bg-white/[0.06] text-primary hover:bg-white/[0.10]"
                             >
                               Approve
                             </button>
@@ -179,6 +155,21 @@ export default function AdminPanel() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!blockTarget}
+        onOpenChange={(open) => !open && setBlockTarget(null)}
+        title="Block User"
+        description={`Are you sure you want to block ${blockTarget?.name || "this user"}? They will be unable to access their account.`}
+        confirmLabel="Block User"
+        variant="danger"
+        onConfirm={() => {
+          if (blockTarget) {
+            blockUser(blockTarget._id);
+            setBlockTarget(null);
+          }
+        }}
+      />
     </main>
   );
 }

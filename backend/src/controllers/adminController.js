@@ -17,15 +17,11 @@ export const approveMentor = async (req, res) => {
   try {
     const { mentorId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(mentorId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid mentor id" });
+      return res.status(400).json({ success: false, message: "Invalid mentor id" });
     }
     const mentorProfile = await MentorProfile.findById(mentorId);
     if (!mentorProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No mentor with this id" });
+      return res.status(404).json({ success: false, message: "No mentor with this id" });
     }
 
     mentorProfile.isApproved = "approved";
@@ -33,9 +29,7 @@ export const approveMentor = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "approved mentor" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -43,16 +37,12 @@ export const blockUser = async (req, res) => {
   try {
     const { userId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid mentor id" });
+      return res.status(400).json({ success: false, message: "Invalid mentor id" });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No user with this id" });
+      return res.status(404).json({ success: false, message: "No user with this id" });
     }
 
     user.isBlocked = true;
@@ -60,9 +50,7 @@ export const blockUser = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "blocked users" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

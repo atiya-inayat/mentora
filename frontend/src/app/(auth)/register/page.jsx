@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
+import usePageTitle from "@/lib/hooks/usePageTitle";
 
 // Validation Schema
 const registerSchema = z
@@ -21,6 +22,8 @@ const registerSchema = z
     password: z
       .string()
       .min(8, "Minimum 8 characters")
+      .regex(/[A-Z]/, "Must include at least one uppercase letter")
+      .regex(/[a-z]/, "Must include at least one lowercase letter")
       .regex(/[0-9]/, "Must include at least one number")
       .regex(/[^A-Za-z0-9]/, "Must include at least one special character"),
 
@@ -39,6 +42,7 @@ const registerSchema = z
   });
 
 export default function RegisterPage() {
+  usePageTitle("Register");
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const queryClient = useQueryClient();
@@ -72,7 +76,7 @@ export default function RegisterPage() {
       const role = user?.role;
 
       const routes = {
-        admin: "/admin/dashboard",
+        admin: "/admin",
         mentor: "/mentor/dashboard",
         mentee: "/dashboard",
       };
@@ -88,34 +92,25 @@ export default function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-background">
-      <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-surface border-primary/20">
-        {/* Back to Home */}
-        <Link href="/" className="inline-flex items-center gap-1 mb-4 text-xs transition text-primary/60 hover:text-primary">
-          ← Back to Home
-        </Link>
-
+      <div className="w-full max-w-md p-6 glass-card rounded-2xl">
         {/* Header */}
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-primary font-poppins">
             Mentora
           </h1>
 
-          <p className="mt-1 text-sm text-primary/70">
-            Create your account and start your journey
-          </p>
+          <p className="mt-1 text-sm text-white/60">Create your account and start your journey</p>
         </div>
 
         {/* Form */}
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {/* Role */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-primary/80">
-              Role
-            </label>
+            <label className="block mb-1 text-sm font-medium text-white/70">Role</label>
 
             <select
               {...register("role")}
-              className="w-full px-3 py-2 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
             >
               <option value="" disabled>
                 Select role
@@ -125,86 +120,67 @@ export default function RegisterPage() {
               <option value="mentee">Mentee</option>
             </select>
 
-            {errors.role && (
-              <p className="mt-1 text-xs text-red-500">{errors.role.message}</p>
-            )}
+            {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role.message}</p>}
           </div>
 
           {/* Name */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-primary/80">
-              Name
-            </label>
+            <label className="block mb-1 text-sm font-medium text-white/70">Name</label>
 
             <input
-              {...register("name")}
-              type="text"
-              placeholder="Enter your name"
-              className="w-full px-3 py-2 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+                {...register("name")}
+                type="text"
+                placeholder="Enter your name"
+                className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
+              />
+
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-white/70">Email</label>
+
+              <input
+                {...register("email")}
+                type="email"
+                placeholder="Enter your email"
+                className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
             />
 
-            {errors.name && (
-              <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block mb-1 text-sm font-medium text-primary/80">
-              Email
-            </label>
-
-            <input
-              {...register("email")}
-              type="email"
-              placeholder="Enter your email"
-              className="w-full px-3 py-2 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.email.message}
-              </p>
-            )}
+            {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
           </div>
 
           {/* Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-primary/80">
-              Password
-            </label>
+            <label className="block mb-1 text-sm font-medium text-white/70">Password</label>
 
             <div className="relative">
               <input
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                className="w-full px-3 py-2 pr-10 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none glass-input"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/60 hover:text-primary"
+                className="absolute -translate-y-1/2 right-3 top-1/2 text-white/40 hover:text-primary"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
             {errors.password && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.password.message}
-              </p>
+              <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
             )}
           </div>
 
           {/* Confirm Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-primary/80">
+            <label className="block mb-1 text-sm font-medium text-white/70">
               Confirm Password
             </label>
 
@@ -213,26 +189,21 @@ export default function RegisterPage() {
                 {...register("confirmPassword")}
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
-                className="w-full px-3 py-2 pr-10 text-sm border rounded-md outline-none bg-background border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none glass-input"
               />
 
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/60 hover:text-primary"
+                className="absolute -translate-y-1/2 right-3 top-1/2 text-white/40 hover:text-primary"
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               >
-                {showConfirmPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
             {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.confirmPassword.message}
-              </p>
+              <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>
             )}
           </div>
 
@@ -240,7 +211,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full py-2.5 text-sm font-medium text-white transition-colors rounded-md bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 text-sm font-medium text-white transition-colors btn-primary rounded-xl"
           >
             {isPending ? "Registering..." : "Create Account"}
           </button>
@@ -254,12 +225,9 @@ export default function RegisterPage() {
         </form>
 
         {/* Footer */}
-        <p className="mt-5 text-sm text-center text-primary/70">
+        <p className="mt-5 text-sm text-center text-white/60">
           Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link href="/login" className="font-medium text-primary hover:underline">
             Login
           </Link>
         </p>

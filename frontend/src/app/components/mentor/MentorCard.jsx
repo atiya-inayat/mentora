@@ -1,64 +1,71 @@
 import Link from "next/link";
-import { Star, ArrowRight } from "lucide-react";
+import { Star, User } from "lucide-react";
+
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export default function MentorCard({ mentor }) {
   if (!mentor) return null;
 
+  const photoUrl = mentor.userId?.photo
+    ? mentor.userId.photo.startsWith("http")
+      ? mentor.userId.photo
+      : `${baseUrl}${mentor.userId.photo}`
+    : null;
+
   return (
-    <div className="group w-full max-w-sm overflow-hidden rounded-2xl border border-primary/20 bg-surface p-6 shadow-[inset_0_-2px_8px_-3px_rgba(13,115,119,0.2)] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-      {" "}
-      {/* top section */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-2xl text-primary font-fugaz">
-            {mentor.userId?.name}
-          </h3>
-
-          <p className="mt-2 text-sm leading-7 text-primary/80">{mentor.bio}</p>
-        </div>
-
-        {/* hourly rate */}
-        <div className="px-3 py-2 text-sm rounded-xl bg-primary text-background whitespace-nowrap">
-          ${mentor.hourlyRate}/hr
-        </div>
-      </div>
-      {/* rating */}
-      <div className="flex items-center gap-2 mt-5">
-        <div className="flex items-center gap-1 px-3 py-1 border rounded-full bg-background border-primary/20">
-          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-
-          <span className="text-sm font-medium text-primary">
-            {mentor.averageRating || "No ratings yet"}
-          </span>
-        </div>
-      </div>
-      {/* skills */}
-      <div className="flex flex-wrap gap-2 mt-5">
-        {mentor.skills?.map((skill, index) => (
-          <span
-            key={index}
-            className="px-3 py-1 text-sm border rounded-full border-primary/20 bg-background text-primary/80"
-          >
-            {skill}
-          </span>
-        ))}
-      </div>
-      {/* button */}
-      <div className="mt-6">
-        {mentor._id ? (
-          <Link
-            href={`/mentors/${mentor._id}`}
-            className="inline-flex items-center gap-2 px-5 py-2 transition rounded-full bg-primary text-background hover:opacity-90"
-          >
-            View Profile
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+    <Link
+      href={`/mentors/${mentor._id}`}
+      className="glass-card rounded-2xl overflow-hidden group hover:-translate-y-1 transition-all duration-300 block"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface">
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt={mentor.userId?.name}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
         ) : (
-          <button className="px-5 py-2 rounded-full cursor-not-allowed bg-primary/50 text-background">
-            Profile Unavailable
-          </button>
+          <div className="flex items-center justify-center w-full h-full">
+            <User className="w-16 h-16 text-white/10" />
+          </div>
         )}
       </div>
-    </div>
+
+      <div className="p-5">
+        <div className="flex items-center gap-1">
+          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+          <span className="text-sm font-medium text-white/70">
+            {mentor.averageRating ? mentor.averageRating.toFixed(1) : "New"}
+          </span>
+        </div>
+
+        <h3 className="mt-2 text-lg font-semibold text-primary">
+          {mentor.userId?.name}
+        </h3>
+
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {mentor.skills?.slice(0, 3).map((skill, i) => (
+            <span
+              key={i}
+              className="px-2.5 py-1 text-xs rounded-full bg-white/[0.06] text-white/60 border border-white/5"
+            >
+              {skill}
+            </span>
+          ))}
+          {mentor.skills?.length > 3 && (
+            <span className="px-2.5 py-1 text-xs rounded-full bg-white/[0.04] text-white/40 border border-white/5">
+              +{mentor.skills.length - 3}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-baseline gap-1 mt-4 pt-4 border-t border-white/5">
+          <span className="text-lg font-semibold text-primary">
+            ${mentor.hourlyRate}
+          </span>
+          <span className="text-sm text-white/40">/hr</span>
+        </div>
+      </div>
+    </Link>
   );
 }

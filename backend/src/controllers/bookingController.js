@@ -3,6 +3,7 @@ import Booking from "../models/Booking.js";
 import MentorProfile from "../models/MentorProfile.js";
 import Session from "../models/Session.js";
 import Review from "../models/Review.js";
+import { sendNotification } from "./notificationController.js";
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 const SESSION_DURATION_MS = 60 * 60 * 1000;
@@ -35,23 +36,17 @@ export const createBooking = async (req, res) => {
     const { scheduledAt } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(mentorId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid mentor id." });
+      return res.status(400).json({ success: false, message: "Invalid mentor id." });
     }
 
     const mentorProfile = await MentorProfile.findById(mentorId);
 
     if (!mentorProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Mentor not found" });
+      return res.status(404).json({ success: false, message: "Mentor not found" });
     }
 
     if (mentorProfile.userId.toString() === menteeId.toString()) {
-      return res
-        .status(400)
-        .json({ success: false, message: "you cannot book yourself" });
+      return res.status(400).json({ success: false, message: "you cannot book yourself" });
     }
 
     const newBooking = await Booking.create({
@@ -59,6 +54,14 @@ export const createBooking = async (req, res) => {
       mentorId: mentorProfile.userId,
       status: "pending",
       scheduledAt,
+    });
+
+    sendNotification({
+      userId: mentorProfile.userId,
+      type: "booking_request",
+      title: "New Booking Request",
+      message: `${req.user.name} wants to book a session with you`,
+      link: "/mentor/dashboard",
     });
 
     return res.status(201).json({ success: true, newBooking });
@@ -82,17 +85,14 @@ export const acceptBooking = async (req, res) => {
     const existingBooking = await Booking.findById(id);
 
     if (!existingBooking) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not available" });
+      return res.status(404).json({ success: false, message: "Booking not available" });
     }
 
     const mentorProfile = await MentorProfile.findOne({ userId: mentorUserId });
 
     const isAuthorized =
       existingBooking.mentorId.toString() === mentorUserId.toString() ||
-      (mentorProfile &&
-        existingBooking.mentorId.toString() === mentorProfile._id.toString());
+      (mentorProfile && existingBooking.mentorId.toString() === mentorProfile._id.toString());
 
     if (!isAuthorized) {
       return res.status(403).json({
@@ -113,6 +113,14 @@ export const acceptBooking = async (req, res) => {
       { $set: { status: "accepted" } },
       { new: true },
     );
+
+    sendNotification({
+      userId: existingBooking.menteeId,
+      type: "booking_accepted",
+      title: "Booking Accepted",
+      message: `${req.user.name} has accepted your booking request`,
+      link: `/my-bookings`,
+    });
 
     return res.status(200).json({ success: true, booking });
   } catch (error) {

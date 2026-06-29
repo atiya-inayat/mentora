@@ -1,11 +1,5 @@
 import Link from "next/link";
-import {
-  FaFacebookF,
-  FaInstagram,
-  FaLinkedinIn,
-  FaYoutube,
-  FaXTwitter,
-} from "react-icons/fa6";
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube, FaXTwitter } from "react-icons/fa6";
 
 const Footer = () => {
   return (
@@ -13,29 +7,52 @@ const Footer = () => {
       <div className="grid grid-cols-1 gap-12 px-6 py-16 mx-auto max-w-7xl md:grid-cols-2 lg:grid-cols-5">
         {/* Brand */}
         <div className="lg:col-span-2">
-          <h2 className="text-3xl font-bold tracking-tight font-fugaz">
-            Mentora
-          </h2>
+          <h2 className="text-3xl font-bold tracking-tight font-fugaz">Mentora</h2>
 
           <p className="max-w-md mt-5 leading-7 text-white/70">
-            Your trusted source to find highly-vetted mentors & industry
-            professionals to move your career ahead.
+            Your trusted source to find highly-vetted mentors & industry professionals to move your
+            career ahead.
           </p>
 
           <div className="flex gap-4 mt-8 text-sm text-white/80">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-white hover:underline"
+            >
               <FaFacebookF size={18} />
             </a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-white hover:underline"
+            >
               <FaInstagram size={18} />
             </a>
-            <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
+            <a
+              href="https://x.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-white hover:underline"
+            >
               <FaXTwitter size={18} />
             </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-white hover:underline"
+            >
               <FaLinkedinIn size={18} />
             </a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-white hover:underline">
+            <a
+              href="https://youtube.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-white hover:underline"
+            >
               <FaYoutube size={18} />
             </a>
           </div>
@@ -126,15 +143,9 @@ const Footer = () => {
           <p>© {new Date().getFullYear()} Mentora. All rights reserved.</p>
 
           <div className="flex gap-5">
-            <span className="transition cursor-default hover:text-white">
-              Terms
-            </span>
-            <span className="transition cursor-default hover:text-white">
-              Privacy
-            </span>
-            <span className="transition cursor-default hover:text-white">
-              Cookies
-            </span>
+            <Link href="/terms" className="transition hover:text-white">Terms</Link>
+            <Link href="/privacy" className="transition hover:text-white">Privacy</Link>
+            <Link href="/cookies" className="transition hover:text-white">Cookies</Link>
           </div>
         </div>
       </div>

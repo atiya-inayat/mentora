@@ -163,18 +163,20 @@ export const handleWebhook = async (req, res) => {
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object;
 
-    // Update payment status in MongoDB
-    await Payment.findOneAndUpdate(
-      { stripePaymentId: paymentIntent.id },
-      { status: "paid", escrow: true },
-    );
+    try {
+      await Payment.findOneAndUpdate(
+        { stripePaymentId: paymentIntent.id },
+        { status: "paid", escrow: true },
+      );
 
-    // Update booking status to payment_held
-    const bookingIdFromMetaData = paymentIntent.metadata.bookingId;
-
-    await Booking.findByIdAndUpdate(bookingIdFromMetaData, {
-      status: "payment_held",
-    });
+      const bookingIdFromMetaData = paymentIntent.metadata.bookingId;
+      await Booking.findByIdAndUpdate(bookingIdFromMetaData, {
+        status: "payment_held",
+      });
+    } catch (dbError) {
+      console.error("Webhook DB update failed:", dbError);
+      return res.status(500).json({ received: false, error: "DB update failed" });
+    }
   }
 
   // Always return 200 to Stripe — tells Stripe you received the event
