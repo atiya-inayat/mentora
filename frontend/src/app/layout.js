@@ -1,4 +1,4 @@
-import { Fugaz_One, Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "./providers/QueryProvider";
 import AuthProvider from "@/components/AuthProvider";
@@ -15,20 +15,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-  variable: "--font-poppins",
-});
-
-const fugaz = Fugaz_One({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-fugaz",
-});
-
 export const metadata = {
-  title: "Mentora — Mentorship Marketplace",
+  title: "Mentora",
   description:
     "Connect with expert mentors, book 1-on-1 sessions, and accelerate your learning journey.",
 };
@@ -37,10 +25,9 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable}
-        ${fugaz.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex flex-col min-h-full font-sans">
+      <body className="flex flex-col min-h-full font-sans bg-background text-foreground">
         <AuthProvider>
           <QueryProvider>
             <ErrorBoundary>{children}</ErrorBoundary>

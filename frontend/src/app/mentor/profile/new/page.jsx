@@ -111,7 +111,7 @@ export default function CreateMentorProfile() {
       <Navbar />
 
       <div className="flex items-center justify-center min-h-[80vh] px-4 py-12">
-        <div className="w-full max-w-lg p-8 glass-card rounded-3xl">
+        <div className="w-full max-w-lg p-8 card">
           <Link
             href="/mentor/dashboard"
             className="inline-flex items-center gap-1 mb-4 text-xs transition text-white/40 hover:text-primary"
@@ -138,10 +138,10 @@ export default function CreateMentorProfile() {
                 className="hidden"
               />
             </div>
-            <h1 className="mt-4 text-3xl font-semibold text-primary font-fugaz">
+            <h1 className="mt-4 text-3xl font-semibold text-foreground">
               Complete Your Profile
             </h1>
-            <p className="mt-2 text-white/60">
+            <p className="mt-2 text-muted">
               Set up your mentor profile to start receiving bookings
             </p>
           </div>

@@ -9,33 +9,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#0A0A0A",
-        surface: "#141414",
-        primary: "#F97316",
-        primaryHover: "#EA580C",
-        text: "#F9FAFB",
-        success: "#22C55E",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        surface: {
+          DEFAULT: "var(--surface)",
+          raised: "var(--surface-raised)",
+          overlay: "var(--surface-overlay)",
+        },
+        border: {
+          DEFAULT: "var(--border)",
+          soft: "var(--border-soft)",
+        },
+        primary: {
+          DEFAULT: "var(--primary)",
+          hover: "var(--primary-hover)",
+          muted: "var(--primary-muted)",
+        },
+        muted: "var(--muted)",
+        "muted-foreground": "var(--muted-foreground)",
+        success: "var(--success)",
       },
 
       fontFamily: {
         sans: ["var(--font-geist-sans)", "sans-serif"],
         mono: ["var(--font-geist-mono)", "monospace"],
-        poppins: ["var(--font-poppins)", "sans-serif"],
-        fugaz: ["var(--font-fugaz)", "sans-serif"],
-      },
-      animation: {
-        marquee: "marquee 25s linear infinite",
-      },
-
-      keyframes: {
-        marquee: {
-          "0%": {
-            transform: "translateX(100%)",
-          },
-          "100%": {
-            transform: "translateX(-100%)",
-          },
-        },
       },
     },
   },

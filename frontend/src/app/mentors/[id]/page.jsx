@@ -71,7 +71,7 @@ export default function MentorProfilePage() {
           Back to mentors
         </Link>
 
-        <div className="glass-card rounded-3xl overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="relative aspect-[4/3] md:aspect-[16/9] bg-surface">
             {mentor.userId?.photo ? (
               <img
@@ -96,7 +96,7 @@ export default function MentorProfilePage() {
           <div className="p-6 md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-semibold text-primary md:text-3xl font-fugaz">
+                <h1 className="text-2xl font-semibold text-foreground md:text-3xl">
                   {mentor.userId?.name}
                 </h1>
 

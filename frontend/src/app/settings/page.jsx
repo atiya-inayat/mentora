@@ -50,11 +50,11 @@ export default function SettingsPage() {
     <main className="min-h-screen bg-background">
       <Navbar />
       <div className="px-4 py-12 mx-auto max-w-2xl sm:px-6 lg:px-8">
-        <h1 className="mb-2 text-3xl font-semibold text-primary font-fugaz">Settings</h1>
-        <p className="mb-8 text-white/60">Manage your account settings</p>
+        <h1 className="mb-2 text-3xl font-semibold text-foreground">Settings</h1>
+        <p className="mb-8 text-muted">Manage your account settings</p>
 
-        <div className="p-8 glass-card rounded-3xl">
-          <h2 className="mb-6 text-xl font-semibold text-primary">Profile Photo</h2>
+        <div className="p-8 card">
+          <h2 className="mb-6 text-xl font-semibold text-foreground">Profile Photo</h2>
 
           <div className="flex flex-col items-center gap-6 sm:flex-row">
             <div className="relative">

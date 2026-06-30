@@ -175,8 +175,8 @@ export default function MentorDashboard() {
             >
               ← Browse Mentors
             </Link>
-            <h1 className="text-4xl font-semibold text-primary font-fugaz">Mentor Dashboard</h1>
-            <p className="mt-2 text-white/60">Manage your mentoring sessions and requests</p>
+            <h1 className="text-4xl font-semibold text-foreground">Mentor Dashboard</h1>
+            <p className="mt-2 text-muted">Manage your mentoring sessions and requests</p>
           </div>
           <div className="relative flex-shrink-0">
             <Avatar src={user?.photo} name={user?.name} size="lg" />

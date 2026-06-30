@@ -54,9 +54,9 @@ export default function AdminPanel() {
       <div className="px-4 py-12 mx-auto max-w-6xl sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-2">
           <Shield className="w-7 h-7 text-primary" />
-          <h1 className="text-3xl font-semibold text-primary font-fugaz">Admin Panel</h1>
+          <h1 className="text-3xl font-semibold text-foreground">Admin Panel</h1>
         </div>
-        <p className="mb-8 text-white/60">Manage users, block accounts, and approve mentors</p>
+        <p className="mb-8 text-muted">Manage users, block accounts, and approve mentors</p>
 
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />

@@ -71,10 +71,10 @@ export default function MyBookingsPage() {
         >
           ← Back to Dashboard
         </Link>
-        <h1 className="mb-2 text-3xl font-semibold text-primary font-fugaz">
+        <h1 className="mb-2 text-3xl font-semibold text-foreground">
           {isMentor ? "All Requests" : "My Bookings"}
         </h1>
-        <p className="mb-8 text-white/60">
+        <p className="mb-8 text-muted">
           {isMentor
             ? "Manage session requests from mentees"
             : "Track your booked mentoring sessions"}

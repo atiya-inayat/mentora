@@ -207,9 +207,9 @@ export default function SessionPage() {
           <div className="flex items-center gap-3">
             <MessageSquare className="w-6 h-6 text-primary" />
             <div>
-              <h1 className="text-2xl font-semibold text-primary font-fugaz">Session</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Session</h1>
               {session?.bookingId?.mentorId?.name && (
-                <p className="text-sm text-white/60">
+                <p className="text-sm text-muted">
                   {isMentor
                     ? `With ${session.bookingId.menteeId?.name || "Mentee"}`
                     : `With ${session.bookingId.mentorId?.name || "Mentor"}`}

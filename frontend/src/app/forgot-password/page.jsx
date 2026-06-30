@@ -27,18 +27,18 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-background">
-      <div className="w-full max-w-md p-6 glass-card rounded-2xl">
+      <div className="w-full max-w-md p-6 card">
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-primary font-poppins">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Mentora
           </h1>
-          <p className="mt-1 text-sm text-white/60">Reset your password</p>
+          <p className="mt-1 text-sm text-muted">Reset your password</p>
         </div>
 
         {status === "success" ? (
           <div className="text-center">
             <CheckCircle className="w-12 h-12 mx-auto text-primary mb-4" />
-            <p className="text-sm text-white/70 mb-6">{message}</p>
+            <p className="text-sm text-muted mb-6">{message}</p>
             <Link
               href="/login"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium btn-primary rounded-full"
@@ -50,16 +50,16 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium text-white/70">Email</label>
+              <label className="block mb-1 text-sm font-medium text-muted-foreground">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border rounded-lg outline-none glass-input"
+                  className="input-field pl-10"
                 />
               </div>
             </div>
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
               {status === "loading" ? "Sending..." : "Send Reset Link"}
             </button>
 
-            <p className="text-sm text-center text-white/60">
+            <p className="text-sm text-center text-muted">
               Remember your password?{" "}
               <Link href="/login" className="font-medium text-primary hover:underline">
                 Login

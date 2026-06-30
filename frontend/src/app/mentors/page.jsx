@@ -103,10 +103,10 @@ const MentorPage = () => {
       </div>
 
       <section className="px-6 pt-8 pb-10 text-center">
-        <h1 className="text-4xl font-semibold md:text-5xl text-primary font-fugaz">
+        <h1 className="text-4xl font-semibold md:text-5xl text-foreground">
           Find a Mentor
         </h1>
-        <p className="max-w-2xl mx-auto mt-4 text-white/60">
+        <p className="max-w-2xl mx-auto mt-4 text-muted">
           Connect with industry experts who can guide your career growth
         </p>
       </section>

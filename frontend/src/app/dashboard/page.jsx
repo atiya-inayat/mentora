@@ -117,7 +117,7 @@ export default function MenteeDashboard() {
       <div className="px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
           <aside>
-            <div className="p-6 glass-card rounded-2xl">
+            <div className="p-6 card">
               <div className="flex flex-col items-center text-center">
                 <div className="relative">
                   <Avatar src={user?.photo} name={user?.name} size="lg" />
@@ -138,20 +138,20 @@ export default function MenteeDashboard() {
                     className="hidden"
                   />
                 </div>
-                <h2 className="mt-4 text-2xl font-semibold text-primary font-fugaz">
+                <h2 className="mt-4 text-2xl font-semibold text-foreground">
                   {user?.name || "Mentee"}
                 </h2>
-                <p className="mt-1 text-sm capitalize text-white/60">{user?.role || "mentee"}</p>
+                <p className="mt-1 text-sm capitalize text-muted">{user?.role || "mentee"}</p>
               </div>
 
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-                  <Mail className="w-4 h-4 text-white/40" />
-                  <span className="text-sm text-white/70">{user?.email || "No email"}</span>
+                  <Mail className="w-4 h-4 text-muted" />
+                  <span className="text-sm text-muted-foreground">{user?.email || "No email"}</span>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-                  <BookOpen className="w-4 h-4 text-white/40" />
-                  <span className="text-sm text-white/70">
+                  <BookOpen className="w-4 h-4 text-muted" />
+                  <span className="text-sm text-muted-foreground">
                     {bookings.length} session{bookings.length !== 1 ? "s" : ""}
                   </span>
                 </div>
@@ -167,8 +167,8 @@ export default function MenteeDashboard() {
               >
                 ← Browse Mentors
               </Link>
-              <h1 className="text-3xl font-semibold text-primary font-fugaz">My Sessions</h1>
-              <p className="mt-1 text-white/60">Track your mentoring sessions and requests</p>
+              <h1 className="text-3xl font-semibold text-foreground">My Sessions</h1>
+              <p className="mt-1 text-muted">Track your mentoring sessions and requests</p>
             </div>
 
             <div className="flex flex-wrap gap-3">

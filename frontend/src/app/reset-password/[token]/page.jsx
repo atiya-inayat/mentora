@@ -41,10 +41,10 @@ export default function ResetPasswordPage() {
   if (status === "success") {
     return (
       <div className="flex items-center justify-center min-h-screen px-4 bg-background">
-        <div className="w-full max-w-md p-6 glass-card rounded-2xl text-center">
+        <div className="w-full max-w-md p-6 card text-center">
           <CheckCircle className="w-12 h-12 mx-auto text-primary mb-4" />
-          <h2 className="text-xl font-semibold text-primary mb-2">Password Reset!</h2>
-          <p className="text-sm text-white/60 mb-6">Your password has been reset successfully.</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Password Reset!</h2>
+          <p className="text-sm text-muted mb-6">Your password has been reset successfully.</p>
           <Link
             href="/login"
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium btn-primary rounded-full"
@@ -59,17 +59,17 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-background">
-      <div className="w-full max-w-md p-6 glass-card rounded-2xl">
+      <div className="w-full max-w-md p-6 card">
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-primary font-poppins">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Mentora
           </h1>
-          <p className="mt-1 text-sm text-white/60">Enter your new password</p>
+          <p className="mt-1 text-sm text-muted">Enter your new password</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1 text-sm font-medium text-white/70">New Password</label>
+            <label className="block mb-1 text-sm font-medium text-muted-foreground">New Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -78,12 +78,12 @@ export default function ResetPasswordPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter new password"
-                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none glass-input"
+                className="input-field pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute -translate-y-1/2 right-3 top-1/2 text-white/40 hover:text-primary"
+                className="absolute -translate-y-1/2 right-3 top-1/2 text-muted hover:text-foreground"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -92,7 +92,7 @@ export default function ResetPasswordPage() {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-white/70">
+            <label className="block mb-1 text-sm font-medium text-muted-foreground">
               Confirm Password
             </label>
             <input
@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
-              className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
+              className="input-field"
             />
           </div>
 

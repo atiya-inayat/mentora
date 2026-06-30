@@ -46,12 +46,12 @@ export default function ReviewPage() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[80vh] px-4">
-          <div className="w-full max-w-md p-8 text-center glass-card rounded-3xl">
+          <div className="w-full max-w-md p-8 text-center card">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/[0.06]">
               <CheckCircle className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="mt-4 text-2xl font-semibold text-primary">Review Submitted!</h2>
-            <p className="mt-2 text-white/60">Thank you for your feedback</p>
+            <h2 className="mt-4 text-2xl font-semibold text-foreground">Review Submitted!</h2>
+            <p className="mt-2 text-muted">Thank you for your feedback</p>
             <Link
               href="/my-bookings"
               className="inline-block mt-6 px-5 py-2.5 text-sm font-medium btn-primary rounded-full"
@@ -76,11 +76,11 @@ export default function ReviewPage() {
           ← Back to Bookings
         </Link>
 
-        <div className="p-8 glass-card rounded-3xl">
-          <h1 className="mb-2 text-2xl font-semibold text-center text-primary font-fugaz">
+        <div className="card p-8">
+          <h1 className="mb-2 text-2xl font-semibold text-center text-foreground">
             Review Your Session
           </h1>
-          <p className="mb-6 text-sm text-center text-white/60">
+          <p className="mb-6 text-sm text-center text-muted">
             How was your session with {booking.mentorId?.name}?
           </p>
 

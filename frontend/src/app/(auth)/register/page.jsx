@@ -92,25 +92,25 @@ export default function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-background">
-      <div className="w-full max-w-md p-6 glass-card rounded-2xl">
+      <div className="w-full max-w-md p-6 card">
         {/* Header */}
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-primary font-poppins">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Mentora
           </h1>
 
-          <p className="mt-1 text-sm text-white/60">Create your account and start your journey</p>
+          <p className="mt-1 text-sm text-muted">Create your account and start your journey</p>
         </div>
 
         {/* Form */}
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {/* Role */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-white/70">Role</label>
+            <label className="block mb-1 text-sm font-medium text-muted-foreground">Role</label>
 
             <select
               {...register("role")}
-              className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
+              className="w-full px-3 py-2 text-sm border rounded-lg outline-none input-field"
             >
               <option value="" disabled>
                 Select role
@@ -125,13 +125,13 @@ export default function RegisterPage() {
 
           {/* Name */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-white/70">Name</label>
+            <label className="block mb-1 text-sm font-medium text-muted-foreground">Name</label>
 
             <input
                 {...register("name")}
                 type="text"
                 placeholder="Enter your name"
-                className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
+                className="w-full px-3 py-2 text-sm border rounded-lg outline-none input-field"
               />
 
               {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
@@ -139,13 +139,13 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="block mb-1 text-sm font-medium text-white/70">Email</label>
+              <label className="block mb-1 text-sm font-medium text-muted-foreground">Email</label>
 
               <input
                 {...register("email")}
                 type="email"
                 placeholder="Enter your email"
-                className="w-full px-3 py-2 text-sm border rounded-lg outline-none glass-input"
+                className="w-full px-3 py-2 text-sm border rounded-lg outline-none input-field"
             />
 
             {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
@@ -153,20 +153,20 @@ export default function RegisterPage() {
 
           {/* Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-white/70">Password</label>
+            <label className="block mb-1 text-sm font-medium text-muted-foreground">Password</label>
 
             <div className="relative">
               <input
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none glass-input"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none input-field"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute -translate-y-1/2 right-3 top-1/2 text-white/40 hover:text-primary"
+                className="absolute -translate-y-1/2 right-3 top-1/2 text-muted hover:text-primary"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -180,7 +180,7 @@ export default function RegisterPage() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block mb-1 text-sm font-medium text-white/70">
+            <label className="block mb-1 text-sm font-medium text-muted-foreground">
               Confirm Password
             </label>
 
@@ -189,13 +189,13 @@ export default function RegisterPage() {
                 {...register("confirmPassword")}
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
-                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none glass-input"
+                className="w-full px-3 py-2 pr-10 text-sm border rounded-lg outline-none input-field"
               />
 
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute -translate-y-1/2 right-3 top-1/2 text-white/40 hover:text-primary"
+                className="absolute -translate-y-1/2 right-3 top-1/2 text-muted hover:text-primary"
                 aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               >
                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -225,7 +225,7 @@ export default function RegisterPage() {
         </form>
 
         {/* Footer */}
-        <p className="mt-5 text-sm text-center text-white/60">
+        <p className="mt-5 text-sm text-center text-muted">
           Already have an account?{" "}
           <Link href="/login" className="font-medium text-primary hover:underline">
             Login

@@ -15,7 +15,7 @@ export default function MentorCard({ mentor }) {
   return (
     <Link
       href={`/mentors/${mentor._id}`}
-      className="glass-card rounded-2xl overflow-hidden group hover:-translate-y-1 transition-all duration-300 block"
+      className="card overflow-hidden group hover:-translate-y-0.5 transition-all duration-300 block"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-surface">
         {photoUrl ? (
@@ -26,7 +26,7 @@ export default function MentorCard({ mentor }) {
           />
         ) : (
           <div className="flex items-center justify-center w-full h-full">
-            <User className="w-16 h-16 text-white/10" />
+            <User className="w-16 h-16 text-muted" />
           </div>
         )}
       </div>
@@ -34,12 +34,12 @@ export default function MentorCard({ mentor }) {
       <div className="p-5">
         <div className="flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-          <span className="text-sm font-medium text-white/70">
+          <span className="text-sm font-medium text-muted-foreground">
             {mentor.averageRating ? mentor.averageRating.toFixed(1) : "New"}
           </span>
         </div>
 
-        <h3 className="mt-2 text-lg font-semibold text-primary">
+        <h3 className="mt-2 text-lg font-semibold text-foreground">
           {mentor.userId?.name}
         </h3>
 
@@ -47,23 +47,23 @@ export default function MentorCard({ mentor }) {
           {mentor.skills?.slice(0, 3).map((skill, i) => (
             <span
               key={i}
-              className="px-2.5 py-1 text-xs rounded-full bg-white/[0.06] text-white/60 border border-white/5"
+              className="px-2.5 py-1 text-xs rounded-full bg-white/[0.05] text-muted border border-border"
             >
               {skill}
             </span>
           ))}
           {mentor.skills?.length > 3 && (
-            <span className="px-2.5 py-1 text-xs rounded-full bg-white/[0.04] text-white/40 border border-white/5">
+            <span className="px-2.5 py-1 text-xs rounded-full bg-white/[0.04] text-muted border border-border">
               +{mentor.skills.length - 3}
             </span>
           )}
         </div>
 
-        <div className="flex items-baseline gap-1 mt-4 pt-4 border-t border-white/5">
-          <span className="text-lg font-semibold text-primary">
+        <div className="flex items-baseline gap-1 mt-4 pt-4 border-t border-border">
+          <span className="text-lg font-semibold text-foreground">
             ${mentor.hourlyRate}
           </span>
-          <span className="text-sm text-white/40">/hr</span>
+          <span className="text-sm text-muted">/hr</span>
         </div>
       </div>
     </Link>

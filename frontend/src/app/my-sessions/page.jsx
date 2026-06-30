@@ -62,8 +62,8 @@ export default function MySessionsPage() {
         >
           ← Back to Dashboard
         </Link>
-        <h1 className="mb-2 text-3xl font-semibold text-primary font-fugaz">My Sessions</h1>
-        <p className="mb-8 text-white/60">
+        <h1 className="mb-2 text-3xl font-semibold text-foreground">My Sessions</h1>
+        <p className="mb-8 text-muted">
           {isMentor
             ? "Manage your active and completed mentoring sessions"
             : "View your upcoming and past mentoring sessions"}

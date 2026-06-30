@@ -139,16 +139,16 @@ export default function PaymentPage() {
           Back to bookings
         </Link>
 
-        <div className="p-8 glass-card rounded-3xl">
+        <div className="card p-8">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary">
               <CreditCard className="w-7 h-7 text-white" />
             </div>
-            <h1 className="mt-4 text-2xl font-semibold text-primary font-fugaz">
+            <h1 className="mt-4 text-2xl font-semibold text-foreground">
               Complete Payment
             </h1>
-            <p className="mt-1 text-sm text-white/60">Session with {booking.mentorId?.name}</p>
-            <p className="text-sm text-white/60">
+            <p className="mt-1 text-sm text-muted">Session with {booking.mentorId?.name}</p>
+            <p className="text-sm text-muted">
               {new Date(booking.scheduledAt).toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "long",
