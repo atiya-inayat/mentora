@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import Footer from "./components/Footer";
 import AllMentors from "./components/mentor/AllMentors";
 import Navbar from "./components/shared/Navbar";
-import { FaAirbnb, FaAmazon, FaSpotify, FaUber, FaMeta, FaMicrosoft } from "react-icons/fa6";
+import {
+  FaAirbnb,
+  FaAmazon,
+  FaSpotify,
+  FaUber,
+  FaMeta,
+  FaMicrosoft,
+} from "react-icons/fa6";
 import Image from "next/image";
 import { Check, Search } from "lucide-react";
 
@@ -46,19 +53,19 @@ export default function Home() {
   const steps = [
     {
       text: "Explore a curated network of vetted mentors.",
-      image: "/discover.svg",
+      image: "/discover.png",
     },
     {
       text: "Choose a flexible mentoring plan.",
-      image: "/start.svg",
+      image: "/start.png",
     },
     {
       text: "Get ongoing support through regular calls.",
-      image: "/meet.svg",
+      image: "/meet.png",
     },
     {
       text: "Reach your goals 2x faster with mentorship.",
-      image: "/grow.svg",
+      image: "/grow.png",
     },
   ];
 
@@ -76,15 +83,15 @@ export default function Home() {
           </h1>
 
           <p className="max-w-2xl mx-auto mt-6 text-lg leading-8 text-white/50">
-            Break through plateaus with honest feedback and guidance from a mentor who has been
-            exactly where you are.
+            Break through plateaus with honest feedback and guidance from a
+            mentor who has been exactly where you are.
           </p>
 
           {/* SEARCH BOX */}
           <div className="p-5 mt-12 glass-card rounded-3xl md:p-6">
             <div className="flex flex-col gap-4 lg:flex-row">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                <Search className="absolute w-5 h-5 -translate-y-1/2 left-4 top-1/2 text-white/30" />
                 <input
                   type="text"
                   placeholder={`${text}|`}
@@ -94,14 +101,19 @@ export default function Home() {
 
               <button
                 onClick={() => router.push("/mentors")}
-                className="px-8 py-4 font-semibold transition-all rounded-2xl bg-primary text-white hover:opacity-90 text-sm"
+                className="px-8 py-4 text-sm font-semibold text-white transition-all rounded-2xl bg-primary hover:opacity-90"
               >
                 Find Mentor
               </button>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-              {["Ace Interviews", "Switch Careers", "Lead Teams", "Start a Company"].map((item) => (
+              {[
+                "Ace Interviews",
+                "Switch Careers",
+                "Lead Teams",
+                "Start a Company",
+              ].map((item) => (
                 <span
                   key={item}
                   className="px-3 py-1.5 text-xs rounded-full bg-white/[0.06] text-white/60 border border-white/5 hover:bg-white/[0.10] transition-colors cursor-default"
@@ -117,12 +129,14 @@ export default function Home() {
       {/* COMPANIES */}
       <section className="py-10 border-y border-white/10">
         <div className="flex flex-wrap items-center justify-center max-w-6xl gap-10 px-6 mx-auto sm:gap-16">
-          {[FaAirbnb, FaAmazon, FaMeta, FaMicrosoft, FaSpotify, FaUber].map((Icon, index) => (
-            <Icon
-              key={index}
-              className="text-4xl transition sm:text-5xl text-white/40 hover:text-primary"
-            />
-          ))}
+          {[FaAirbnb, FaAmazon, FaMeta, FaMicrosoft, FaSpotify, FaUber].map(
+            (Icon, index) => (
+              <Icon
+                key={index}
+                className="text-4xl transition sm:text-5xl text-white/40 hover:text-primary"
+              />
+            ),
+          )}
         </div>
       </section>
 
@@ -135,8 +149,9 @@ export default function Home() {
           </h2>
 
           <p className="mt-6 text-base leading-8 text-white/60">
-            Learn high-demand skills with guidance from experienced mentors. Start your dream
-            career, build your startup, and grow faster with personalized mentorship.
+            Learn high-demand skills with guidance from experienced mentors.
+            Start your dream career, build your startup, and grow faster with
+            personalized mentorship.
           </p>
 
           <div className="grid gap-4 mt-10 sm:grid-cols-2">
@@ -152,7 +167,7 @@ export default function Home() {
                 key={item}
                 className="flex items-center gap-3 p-4 glass-card rounded-2xl"
               >
-                <Check className="p-1 rounded-full shrink-0 bg-primary text-white" />
+                <Check className="p-1 text-white rounded-full shrink-0 bg-primary" />
 
                 <h3 className="text-sm font-medium text-white/70">{item}</h3>
               </div>
@@ -168,7 +183,12 @@ export default function Home() {
         </div>
 
         <div className="relative h-[300px] sm:h-[450px] overflow-hidden rounded-3xl shadow-2xl">
-          <Image src="/explainer.webp" alt="explainer" fill className="object-cover" />
+          <Image
+            src="/explainer.png"
+            alt="explainer"
+            fill
+            className="object-cover"
+          />
         </div>
       </section>
 
@@ -182,7 +202,7 @@ export default function Home() {
           ].map(([number, label]) => (
             <div
               key={label}
-              className="p-8 text-center glass-card rounded-3xl shadow-xl"
+              className="p-8 text-center shadow-xl glass-card rounded-3xl"
             >
               <h2 className="text-4xl font-bold text-primary">{number}</h2>
 
@@ -197,7 +217,8 @@ export default function Home() {
         <p className="text-3xl text-yellow-500">★★★★★</p>
 
         <h2 className="mt-8 text-2xl leading-10 sm:text-3xl text-primary/90">
-          “Having access to experienced mentors helped me finally land my dream role at Tesla.”
+          “Having access to experienced mentors helped me finally land my dream
+          role at Tesla.”
         </h2>
 
         <div className="flex items-center justify-center gap-4 mt-10">
@@ -229,19 +250,28 @@ export default function Home() {
               <div key={index} className="relative md:pl-20">
                 <div className="absolute hidden w-5 h-5 border-4 rounded-full md:block left-4 top-10 bg-primary border-background" />
 
-                <div className="grid items-center gap-8 p-6 glass-card rounded-3xl shadow-xl lg:grid-cols-2">
+                <div className="grid items-center gap-8 p-6 shadow-xl glass-card rounded-3xl lg:grid-cols-2">
                   <div className="relative h-64 overflow-hidden rounded-2xl bg-background">
-                    <Image src={item.image} alt="step" fill className="object-contain p-6" />
+                    <Image
+                      src={item.image}
+                      alt="step"
+                      fill
+                      className="object-contain p-6"
+                    />
                   </div>
 
                   <div>
-                    <span className="text-sm font-medium text-white/40">Step {index + 1}</span>
+                    <span className="text-sm font-medium text-white/40">
+                      Step {index + 1}
+                    </span>
 
-                    <h3 className="mt-3 text-2xl font-semibold text-primary">{item.text}</h3>
+                    <h3 className="mt-3 text-2xl font-semibold text-primary">
+                      {item.text}
+                    </h3>
 
                     <p className="mt-4 leading-8 text-white/60">
-                      Personalized mentorship designed to help you move faster and make smarter
-                      career decisions.
+                      Personalized mentorship designed to help you move faster
+                      and make smarter career decisions.
                     </p>
                   </div>
                 </div>
@@ -258,7 +288,9 @@ export default function Home() {
             Explore 7,000+ available mentors
           </h2>
 
-          <p className="mt-4 text-white/50">Learn from experienced industry professionals.</p>
+          <p className="mt-4 text-white/50">
+            Learn from experienced industry professionals.
+          </p>
         </div>
 
         <AllMentors />
