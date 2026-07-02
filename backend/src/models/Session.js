@@ -7,32 +7,25 @@ const sessionSchema = new mongoose.Schema(
       ref: "Booking",
       required: true,
     },
-
     status: {
       type: String,
-      enum: ["pending", "ongoing", "completed", "expired"],
-      default: "pending",
+      enum: ["scheduled", "ready", "live", "completed"],
+      default: "scheduled",
     },
-
     startTime: {
       type: Date,
     },
-
     endTime: {
       type: Date,
     },
-
     scheduledAt: {
       type: Date,
     },
-
     expiresAt: {
       type: Date,
     },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true }
 );
 
 export default mongoose.model("Session", sessionSchema);

@@ -70,7 +70,7 @@ const Navbar = () => {
               <Link className="hover:text-foreground transition-colors" href={dashboardUrl}>
                 Dashboard
               </Link>
-              <Link className="hover:text-foreground transition-colors" href="/my-bookings">
+              <Link className="hover:text-foreground transition-colors" href="/bookings">
                 My Bookings
               </Link>
               <Link className="hover:text-foreground transition-colors" href="/my-sessions">
@@ -116,7 +116,7 @@ const Navbar = () => {
             )}
             {user && (
               <>
-                <Link onClick={() => setOpen(false)} href="/my-bookings" className="py-2 text-sm text-muted-foreground hover:text-foreground">
+                <Link onClick={() => setOpen(false)} href="/bookings" className="py-2 text-sm text-muted-foreground hover:text-foreground">
                   My Bookings
                 </Link>
                 <Link onClick={() => setOpen(false)} href="/my-sessions" className="py-2 text-sm text-muted-foreground hover:text-foreground">

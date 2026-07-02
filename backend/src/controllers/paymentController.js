@@ -1,184 +1,250 @@
-import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
+import Slot from "../models/Slot.js";
+import Availability from "../models/Availability.js";
 import MentorProfile from "../models/MentorProfile.js";
-import { createPaymentIntent } from "../services/stripeService.js";
+import Session from "../models/Session.js";
+import User from "../models/User.js";
 import stripe from "../config/stripe.js";
+import { createCheckoutSession, createTransfer } from "../services/stripeService.js";
+import { sendNotification } from "./notificationController.js";
 
-export const initiatePayment = async (req, res) => {
+export const initiateCheckout = async (req, res) => {
   try {
-    const { bookingId } = req.params;
+    const { slotId, notes } = req.body;
     const menteeId = req.user._id;
 
-    // Step 1: Validate ID format
-    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid booking ID",
-      });
+    const slot = await Slot.findById(slotId);
+    if (!slot || slot.status !== "reserved" || slot.reservedBy.toString() !== menteeId.toString()) {
+      return res.status(400).json({ success: false, message: "Slot not reserved by you" });
     }
 
-    // Step 2: Find the booking
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found",
-      });
-    }
-
-    // Step 3: Verify this mentee owns this booking
-    // Why? So mentee A can't pay for mentee B's booking
-    if (booking.menteeId.toString() !== menteeId.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    // Step 4: Check booking is accepted
-    // Why? Can't pay for a pending or rejected booking
-    if (booking.status !== "accepted") {
-      return res.status(400).json({
-        success: false,
-        message: "Booking must be accepted before payment",
-      });
-    }
-
-    // Step 5: Get mentor's hourly rate and Stripe account
-    // Handle both old (MentorProfile._id) and new (User._id) booking formats
-    let mentorProfile = await MentorProfile.findOne({
-      userId: booking.mentorId,
-    });
-
+    const mentorProfile = await MentorProfile.findOne({ userId: slot.mentorId });
     if (!mentorProfile) {
-      mentorProfile = await MentorProfile.findById(booking.mentorId);
+      return res.status(404).json({ success: false, message: "Mentor profile not found" });
     }
 
-    if (!mentorProfile) {
-      return res.status(404).json({
-        success: false,
-        message: "Mentor profile not found",
-      });
-    }
-
-    // Step 6: Create Stripe PaymentIntent
-    const { clientSecret, paymentIntentId } = await createPaymentIntent(
+    const checkoutSession = await createCheckoutSession(
       mentorProfile.hourlyRate,
-      mentorProfile.stripeAccountId, // mentor's Connect account
-      bookingId,
+      mentorProfile.stripeAccountId,
+      slotId,
+      slot.mentorId,
+      menteeId,
+      notes
     );
 
-    // Step 7: Save payment record to MongoDB
     await Payment.create({
-      bookingId: booking._id,
       amount: mentorProfile.hourlyRate,
       status: "pending",
-      escrow: true,
-      stripePaymentId: paymentIntentId,
+      stripeCheckoutSessionId: checkoutSession.id,
     });
 
-    // Step 8: Return clientSecret to frontend
-    return res.status(200).json({
-      success: true,
-      clientSecret,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-export const confirmPayment = async (req, res) => {
-  try {
-    const { bookingId } = req.params;
-    const menteeId = req.user._id;
-
-    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-      return res.status(400).json({ success: false, message: "Invalid booking ID" });
-    }
-
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
-    }
-
-    if (booking.menteeId.toString() !== menteeId.toString()) {
-      return res.status(403).json({ success: false, message: "Unauthorized" });
-    }
-
-    if (booking.status !== "accepted") {
-      return res.status(400).json({ success: false, message: "Booking must be accepted" });
-    }
-
-    const existingPayment = await Payment.findOne({ bookingId });
-    if (existingPayment && existingPayment.status === "paid") {
-      return res.status(200).json({ success: true, message: "Already paid" });
-    }
-
-    if (!existingPayment || !existingPayment.stripePaymentId) {
-      return res.status(400).json({ success: false, message: "Payment not initiated" });
-    }
-
-    const paymentIntent = await stripe.paymentIntents.retrieve(existingPayment.stripePaymentId);
-    if (paymentIntent.status !== "succeeded") {
-      return res.status(400).json({
-        success: false,
-        message: `Payment has not been completed. Status: ${paymentIntent.status}`,
-      });
-    }
-
-    booking.status = "payment_held";
-    await booking.save();
-
-    existingPayment.status = "paid";
-    await existingPayment.save();
-
-    return res.status(200).json({ success: true, message: "Payment confirmed" });
+    return res.status(200).json({ success: true, url: checkoutSession.url });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
+};
+
+const createBookingFromSession = async (stripeSession, stripePaymentIntent) => {
+  const { slotId, mentorId, menteeId, notes } = stripeSession.metadata;
+
+  const slot = await Slot.findById(slotId);
+  if (!slot || slot.status !== "reserved") {
+    throw new Error("Slot not reserved");
+  }
+
+  const mentorAvail = await Availability.findOne({ mentorId });
+  const timezone = mentorAvail?.timezone || "UTC";
+
+  const booking = await Booking.create({
+    menteeId,
+    mentorId,
+    slotId,
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    timezone,
+    notes: notes || "",
+    status: "confirmed",
+  });
+
+  slot.status = "booked";
+  slot.bookingId = booking._id;
+  await slot.save();
+
+  await Payment.findOneAndUpdate(
+    { stripeCheckoutSessionId: stripeSession.id },
+    { bookingId: booking._id, status: "paid", stripePaymentId: stripePaymentIntent }
+  );
+
+  const expiresAt = new Date(slot.startTime.getTime() + 60 * 60 * 1000);
+  await Session.create({
+    bookingId: booking._id,
+    status: "scheduled",
+    scheduledAt: slot.startTime,
+    expiresAt,
+  });
+
+  const [menteeUser, mentorUser] = await Promise.all([
+    User.findById(menteeId).select("name"),
+    User.findById(mentorId).select("name"),
+  ]);
+
+  sendNotification({
+    userId: menteeId,
+    type: "booking_confirmed",
+    title: "Booking Confirmed",
+    message: `Your payment was successful. Your session with ${mentorUser?.name || "your mentor"} has been confirmed.`,
+    link: "/bookings",
+  });
+
+  sendNotification({
+    userId: mentorId,
+    type: "new_booking",
+    title: "New Booking",
+    message: `You have a new confirmed booking from ${menteeUser?.name || "a mentee"}.`,
+    link: "/mentor/dashboard",
+  });
+
+  return booking;
 };
 
 export const handleWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
 
   let event;
-
   try {
-    // Stripe signs every webhook — verify it's really from Stripe
     event = stripe.webhooks.constructEvent(
-      req.body, // raw body
-      sig, // signature header
-      process.env.STRIPE_WEBHOOK_SECRET, // your webhook secret
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (error) {
-    // Invalid signature — reject it
     return res.status(400).json({ message: "Webhook verification failed" });
   }
 
-  // Handle different event types
-  if (event.type === "payment_intent.succeeded") {
-    const paymentIntent = event.data.object;
-
+  if (event.type === "checkout.session.completed") {
     try {
-      await Payment.findOneAndUpdate(
-        { stripePaymentId: paymentIntent.id },
-        { status: "paid", escrow: true },
-      );
-
-      const bookingIdFromMetaData = paymentIntent.metadata.bookingId;
-      await Booking.findByIdAndUpdate(bookingIdFromMetaData, {
-        status: "payment_held",
-      });
+      await createBookingFromSession(event.data.object, event.data.object.payment_intent);
     } catch (dbError) {
-      console.error("Webhook DB update failed:", dbError);
+      console.error("Webhook processing error:", dbError);
       return res.status(500).json({ received: false, error: "DB update failed" });
     }
   }
 
-  // Always return 200 to Stripe — tells Stripe you received the event
   res.status(200).json({ received: true });
+};
+
+export const confirmPayment = async (req, res) => {
+  try {
+    const { session_id } = req.body;
+    if (!session_id) {
+      return res.status(400).json({ success: false, message: "Missing session_id" });
+    }
+
+    const payment = await Payment.findOne({ stripeCheckoutSessionId: session_id });
+    if (!payment) {
+      return res.status(404).json({ success: false, message: "Payment not found" });
+    }
+
+    if (payment.status === "paid" && payment.bookingId) {
+      const booking = await Booking.findById(payment.bookingId)
+        .populate("mentorId", "name email photo")
+        .populate("menteeId", "name email photo");
+      return res.status(200).json({
+        success: true, status: "already_confirmed",
+        booking: booking ? { _id: booking._id, mentorName: booking.mentorId?.name, startTime: booking.startTime, endTime: booking.endTime, timezone: booking.timezone } : null,
+        amount: payment.amount,
+      });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (session.payment_status !== "paid") {
+      return res.status(400).json({ success: false, message: "Payment not completed on Stripe" });
+    }
+
+    const booking = await createBookingFromSession(session, session.payment_intent);
+
+    return res.status(200).json({
+      success: true, status: "confirmed",
+      booking: { _id: booking._id, mentorName: booking.mentorId?.name, startTime: booking.startTime, endTime: booking.endTime, timezone: booking.timezone },
+      amount: payment.amount,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPaymentSuccess = async (req, res) => {
+  try {
+    const { session_id } = req.query;
+    if (!session_id) {
+      return res.status(400).json({ success: false, message: "Missing session_id" });
+    }
+
+    const payment = await Payment.findOne({ stripeCheckoutSessionId: session_id });
+    if (!payment) {
+      return res.status(404).json({ success: false, message: "Payment not found" });
+    }
+
+    if (payment.status !== "paid" || !payment.bookingId) {
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      if (session.payment_status === "paid" && !payment.bookingId) {
+        return res.status(202).json({ success: true, status: "processing", message: "Booking is being created" });
+      }
+      return res.status(200).json({ success: true, status: payment.status, booking: null, amount: payment.amount });
+    }
+
+    const booking = await Booking.findById(payment.bookingId)
+      .populate("mentorId", "name email photo")
+      .populate("menteeId", "name email photo");
+
+    return res.status(200).json({
+      success: true,
+      status: "paid",
+      amount: payment.amount,
+      booking: booking
+        ? {
+            _id: booking._id,
+            mentorName: booking.mentorId?.name,
+            mentorPhoto: booking.mentorId?.photo,
+            menteeName: booking.menteeId?.name,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            timezone: booking.timezone,
+          }
+        : null,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const releasePayment = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    const payment = await Payment.findOne({ bookingId, status: "paid" });
+    if (!payment) {
+      return res.status(400).json({ success: false, message: "No paid payment found" });
+    }
+
+    const mentorProfile = await MentorProfile.findOne({ userId: booking.mentorId });
+    if (!mentorProfile || !mentorProfile.stripeAccountId) {
+      return res.status(400).json({ success: false, message: "Mentor Stripe account not found" });
+    }
+
+    await createTransfer(payment.amount, mentorProfile.stripeAccountId);
+
+    payment.status = "released";
+    await payment.save();
+
+    return res.status(200).json({ success: true, message: "Payment released to mentor" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };

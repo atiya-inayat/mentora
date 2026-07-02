@@ -22,18 +22,17 @@ import {
   Mail,
   Camera,
   User,
-  CreditCard,
   MessageSquare,
   Star,
-  AlertCircle,
+  XCircle,
 } from "lucide-react";
 
-const statusLabels = {
-  upcoming: { label: "Upcoming", style: "bg-blue-500/10 text-blue-400" },
-  ready_to_start: { label: "Ready", style: "bg-green-500/10 text-green-400" },
-  active: { label: "Active", style: "glass-badge" },
-  expired: { label: "Expired", style: "bg-red-500/10 text-red-400" },
-  completed: { label: "Completed", style: "bg-white/5 text-gray-400" },
+const statusStyles = {
+  confirmed: "bg-blue-500/10 text-blue-400",
+  completed: "bg-green-500/10 text-green-400",
+  cancelled: "bg-red-500/10 text-red-400",
+  no_show: "bg-yellow-500/10 text-yellow-400",
+  refunded: "bg-purple-500/10 text-purple-400",
 };
 
 export default function MenteeDashboard() {
@@ -102,13 +101,12 @@ export default function MenteeDashboard() {
     );
 
   const bookings = data?.data || [];
+  const now = new Date();
 
-  const statusCounts = {
-    pending: bookings.filter((b) => b.status === "pending").length,
-    accepted: bookings.filter((b) => b.status === "accepted").length,
-    completed: bookings.filter((b) => b.status === "completed").length,
-    active: bookings.filter((b) => b.status === "payment_held" || b.status === "completed").length,
-  };
+  const confirmed = bookings.filter((b) => b.status === "confirmed");
+  const upcoming = confirmed.filter((b) => new Date(b.startTime) > now);
+  const completed = bookings.filter((b) => b.status === "completed");
+  const cancelled = bookings.filter((b) => b.status === "cancelled");
 
   return (
     <main className="min-h-screen bg-background">
@@ -141,13 +139,17 @@ export default function MenteeDashboard() {
                 <h2 className="mt-4 text-2xl font-semibold text-foreground">
                   {user?.name || "Mentee"}
                 </h2>
-                <p className="mt-1 text-sm capitalize text-muted">{user?.role || "mentee"}</p>
+                <p className="mt-1 text-sm capitalize text-muted">
+                  {user?.role || "mentee"}
+                </p>
               </div>
 
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
                   <Mail className="w-4 h-4 text-muted" />
-                  <span className="text-sm text-muted-foreground">{user?.email || "No email"}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {user?.email || "No email"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
                   <BookOpen className="w-4 h-4 text-muted" />
@@ -163,85 +165,105 @@ export default function MenteeDashboard() {
             <div>
               <Link
                 href="/mentors"
-                className="inline-flex items-center gap-1 mb-2 text-xs transition text-white/40 hover:text-primary"
+                className="inline-flex items-center gap-1 mb-2 text-xs transition text-muted hover:text-foreground"
               >
-                ← Browse Mentors
+                Browse Mentors
               </Link>
-              <h1 className="text-3xl font-semibold text-foreground">My Sessions</h1>
-              <p className="mt-1 text-muted">Track your mentoring sessions and requests</p>
+              <h1 className="text-3xl font-semibold text-foreground">
+                Welcome back, {user?.name}
+              </h1>
+              <p className="mt-1 text-muted">
+                Track your mentoring sessions
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/my-bookings"
+                href="/bookings"
                 className="px-4 py-2 text-sm font-medium transition rounded-full bg-surface text-primary border border-white/5 hover:bg-white/[0.06]"
               >
                 All Bookings
               </Link>
               <Link
-                href="/my-sessions"
+                href="/mentors"
                 className="px-4 py-2 text-sm font-medium transition rounded-full bg-surface text-primary border border-white/5 hover:bg-white/[0.06]"
               >
-                Active Sessions
+                Find a Mentor
               </Link>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="p-4 glass-card rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-background">
-                    <Clock className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">Pending</p>
-                    <p className="text-2xl font-bold text-primary">{statusCounts.pending}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 glass-card rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-background">
-                    <CheckCircle className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">Accepted</p>
-                    <p className="text-2xl font-bold text-primary">{statusCounts.accepted}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 glass-card rounded-2xl">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+              <div className="p-4 card">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-background">
                     <Calendar className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs text-white/60">Completed</p>
-                    <p className="text-2xl font-bold text-primary">{statusCounts.completed}</p>
+                    <p className="text-xs text-muted">Upcoming</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {upcoming.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 card">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-background">
+                    <CheckCircle className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted">Completed</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {completed.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 card">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-background">
+                    <BookOpen className="w-5 h-5 text-muted" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted">Total</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {bookings.length}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             <section>
-              <h2 className="mb-4 text-xl font-semibold text-primary">All Bookings</h2>
+              <h2 className="mb-4 text-xl font-semibold text-primary">
+                Upcoming Sessions
+              </h2>
 
-              {bookings.length === 0 ? (
-                <div className="p-12 text-center glass-card rounded-2xl">
-                  <p className="text-white/40">No bookings yet</p>
+              {upcoming.length === 0 ? (
+                <div className="p-12 text-center card">
+                  <p className="text-white/40">No upcoming sessions</p>
+                  {!user?.role === "mentor" && (
+                    <Link
+                      href="/mentors"
+                      className="inline-block mt-4 px-5 py-2.5 text-sm font-medium btn-primary rounded-full"
+                    >
+                      Browse Mentors
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {bookings.map((booking) => {
-                    const isAccepted = booking.status === "accepted";
-                    const isPaymentHeld = booking.status === "payment_held";
-                    const isCompleted = booking.status === "completed";
-                    const ts = booking.timeStatus;
-                    const statusInfo = statusLabels[ts];
+                  {upcoming.map((booking) => {
+                    const session = booking.session;
+                    const isLive = session?.status === "live";
+                    const isScheduled = session?.status === "scheduled";
+                    const startTime = new Date(booking.startTime);
+                    const showJoin = isLive || (isScheduled && startTime <= new Date(now.getTime() + 15 * 60 * 1000));
 
                     return (
                       <div
                         key={booking._id}
-                        className="flex items-center justify-between p-5 glass-card rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+                        className="flex items-center justify-between p-5 card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-2">
@@ -253,73 +275,38 @@ export default function MenteeDashboard() {
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-white/40" />
                             <p className="text-sm text-white/60">
-                              {new Date(booking.scheduledAt).toLocaleDateString("en-US", {
+                              {startTime.toLocaleDateString("en-US", {
                                 weekday: "long",
                                 year: "numeric",
                                 month: "long",
                                 day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
                               })}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {isAccepted && (
+                          {showJoin && session && (
                             <Link
-                              href={`/payment/${booking._id}`}
+                              href={`/session/${session._id}`}
                               className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium btn-primary rounded-full"
                             >
-                              <CreditCard className="w-4 h-4" />
-                              Pay Now
-                            </Link>
-                          )}
-
-                          {isPaymentHeld && ts === "active" && (
-                            <Link
-                              href={`/session/${booking._id}`}
-                              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full bg-white/[0.06] text-primary hover:bg-white/[0.10]"
-                            >
                               <MessageSquare className="w-4 h-4" />
-                              Chat
+                              Join Session
                             </Link>
                           )}
-
-                          {isCompleted && !booking.reviewed && (
-                            <Link
-                              href={`/review/${booking._id}`}
-                              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full bg-white/[0.06] text-primary hover:bg-white/[0.10]"
-                            >
-                              <Star className="w-4 h-4" />
-                              Review
-                            </Link>
-                          )}
-
-                          {isPaymentHeld && ts === "upcoming" && (
-                            <div className="text-sm text-white/40">
-                              <Clock className="inline w-4 h-4 mr-1" />
-                              {(() => {
-                                const ms = new Date(booking.scheduledAt) - new Date();
-                                const m = Math.floor(ms / 60000);
-                                const h = Math.floor(m / 60);
-                                return `${h > 0 ? `${h}h ` : ""}${m % 60}m`;
-                              })()}
-                            </div>
-                          )}
-
-                          {ts && statusInfo ? (
-                            <span
-                              className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${statusInfo.style}`}
-                            >
-                              {ts === "expired" && <AlertCircle className="w-3 h-3" />}
-                              {statusInfo.label}
-                            </span>
-                          ) : (
-                            <span
-                              className={`px-4 py-1.5 text-sm font-medium rounded-full capitalize bg-white/[0.06] text-primary`}
-                            >
-                              {booking.status === "payment_held" ? "Paid" : booking.status}
+                          {!showJoin && (
+                            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                              <CheckCircle className="w-4 h-4" />
+                              Paid
                             </span>
                           )}
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status] || "bg-white/5 text-white/60"}`}>
+                            <Clock className="w-3 h-3" />
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </span>
                         </div>
                       </div>
                     );
@@ -327,6 +314,100 @@ export default function MenteeDashboard() {
                 </div>
               )}
             </section>
+
+            {completed.length > 0 && (
+              <section>
+                <h2 className="mb-4 text-xl font-semibold text-primary">
+                  Completed Sessions
+                </h2>
+                <div className="space-y-3">
+                  {completed.map((booking) => (
+                    <div
+                      key={booking._id}
+                      className="flex items-center justify-between p-5 card"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-white/40" />
+                          <p className="font-medium text-primary">
+                            {booking.mentorId?.name || "Unknown"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-white/40" />
+                          <p className="text-sm text-white/60">
+                            {new Date(booking.startTime).toLocaleDateString("en-US", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status]}`}>
+                          <CheckCircle className="w-3 h-3" />
+                          Completed
+                        </span>
+                        {!booking.reviewed && (
+                          <Link
+                            href={`/review/${booking._id}`}
+                            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full bg-white/[0.06] text-primary hover:bg-white/[0.10]"
+                          >
+                            <Star className="w-4 h-4" />
+                            Review
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {cancelled.length > 0 && (
+              <section>
+                <h2 className="mb-4 text-xl font-semibold text-primary">
+                  Cancelled
+                </h2>
+                <div className="space-y-3">
+                  {cancelled.map((booking) => (
+                    <div
+                      key={booking._id}
+                      className="flex items-center justify-between p-5 card"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-white/40" />
+                          <p className="font-medium text-primary">
+                            {booking.mentorId?.name || "Unknown"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-white/40" />
+                          <p className="text-sm text-white/60">
+                            {new Date(booking.startTime).toLocaleDateString("en-US", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status]}`}>
+                        <XCircle className="w-3 h-3" />
+                        Cancelled
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </div>

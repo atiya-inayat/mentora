@@ -106,7 +106,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="p-8 mt-6 glass-card rounded-3xl">
+        <div className="p-8 mt-6 card rounded-3xl">
           <h2 className="mb-4 text-xl font-semibold text-primary">Account Info</h2>
           <div className="space-y-4">
             <div>

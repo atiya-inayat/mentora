@@ -5,7 +5,7 @@ const paymentSchema = new mongoose.Schema(
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
-      required: true,
+      default: null,
     },
     amount: {
       type: Number,
@@ -13,20 +13,17 @@ const paymentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "paid", "failed", "refunded", "released"],
+      enum: ["pending", "paid", "released", "refunded"],
       default: "pending",
-    },
-    escrow: {
-      type: Boolean,
-      default: true,
     },
     stripePaymentId: {
       type: String,
     },
+    stripeCheckoutSessionId: {
+      type: String,
+    },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true }
 );
 
 export default mongoose.model("Payment", paymentSchema);

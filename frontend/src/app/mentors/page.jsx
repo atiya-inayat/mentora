@@ -211,7 +211,7 @@ const MentorPage = () => {
       {/* Results */}
       <section className="px-6 pb-8 mx-auto max-w-7xl">
         {mentors.length === 0 ? (
-          <div className="p-12 text-center glass-card rounded-2xl">
+          <div className="p-12 text-center card rounded-2xl">
             <p className="text-white/40">No mentors match your filters</p>
             {hasActiveFilters && (
               <button onClick={clearFilters} className="mt-3 text-sm text-primary hover:underline">

@@ -6,16 +6,14 @@ import Navbar from "@/app/components/shared/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner, CardSkeleton } from "@/app/components/shared/LoadingSkeleton";
-import { Calendar, User, MessageSquare, Play, AlertCircle, Clock } from "lucide-react";
+import { Calendar, User, MessageSquare, Play, AlertCircle, Clock, CheckCircle } from "lucide-react";
 import usePageTitle from "@/lib/hooks/usePageTitle";
 import { toast } from "sonner";
 
-const statusLabels = {
-  upcoming: { label: "Upcoming", style: "bg-blue-500/10 text-blue-400" },
-  ready_to_start: { label: "Ready to Start", style: "bg-green-500/10 text-green-400" },
-  active: { label: "Active", style: "glass-badge" },
-  expired: { label: "Expired", style: "bg-red-500/10 text-red-400" },
-  completed: { label: "Completed", style: "bg-white/5 text-gray-400" },
+const statusStyles = {
+  confirmed: "bg-blue-500/10 text-blue-400",
+  completed: "bg-green-500/10 text-green-400",
+  cancelled: "bg-red-500/10 text-red-400",
 };
 
 export default function MySessionsPage() {
@@ -38,13 +36,11 @@ export default function MySessionsPage() {
     );
 
   const bookings = data?.data || [];
-  const sessions = bookings.filter((b) => b.status === "payment_held" || b.status === "completed");
+  const sessions = bookings.filter((b) => b.status === "confirmed" || b.status === "completed");
   const isMentor = user?.role === "mentor";
 
-  const handleStart = (booking) => {
-    const ts = booking.timeStatus;
-    if (ts === "expired" || ts === "completed") return;
-    startSession(booking._id, {
+  const handleStart = (bookingId) => {
+    startSession(bookingId, {
       onSuccess: (res) => {
         if (res?.data?._id) router.push(`/session/${res.data._id}`);
       },
@@ -70,25 +66,24 @@ export default function MySessionsPage() {
         </p>
 
         {sessions.length === 0 ? (
-          <div className="p-12 text-center glass-card rounded-2xl">
+          <div className="p-12 text-center card rounded-2xl">
             <p className="text-white/40">No sessions yet. Book a mentor to get started!</p>
           </div>
         ) : (
           <div className="space-y-4">
             {sessions.map((booking) => {
               const otherParty = isMentor ? booking.menteeId : booking.mentorId;
-              let ts = booking.timeStatus;
-              if (ts === "ready_to_start") {
-                const now = Date.now();
-                const scheduled = new Date(booking.scheduledAt).getTime();
-                if (now > scheduled + 15 * 60 * 1000) ts = "expired";
-              }
-              const statusInfo = statusLabels[ts] || statusLabels.upcoming;
+              const session = booking.session;
+              const isLive = session?.status === "live";
+              const isScheduled = session?.status === "scheduled";
+              const startTime = new Date(booking.startTime);
+              const now = new Date();
+              const canStart = isMentor && isScheduled && startTime <= new Date(now.getTime() + 15 * 60 * 1000);
 
               return (
                 <div
                   key={booking._id}
-                  className="p-6 glass-card rounded-2xl"
+                  className="p-6 card rounded-2xl"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-2">
@@ -99,7 +94,7 @@ export default function MySessionsPage() {
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-white/40" />
                         <p className="text-sm text-white/60">
-                          {new Date(booking.scheduledAt).toLocaleDateString("en-US", {
+                          {startTime.toLocaleDateString("en-US", {
                             weekday: "long",
                             year: "numeric",
                             month: "long",
@@ -109,49 +104,50 @@ export default function MySessionsPage() {
                           })}
                         </p>
                       </div>
-                      <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${statusInfo.style}`}
-                      >
-                        {ts === "expired" && <AlertCircle className="w-3 h-3" />}
-                        {ts === "ready_to_start" && <Play className="w-3 h-3" />}
-                        {statusInfo.label}
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status] || "bg-white/5 text-white/60"}`}>
+                        {booking.status === "confirmed" && <Clock className="w-3 h-3" />}
+                        {booking.status === "completed" && <CheckCircle className="w-3 h-3" />}
+                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {ts === "upcoming" && (
+                      {isLive && (
+                        <Link
+                          href={`/session/${session._id}`}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          Join Session
+                        </Link>
+                      )}
+                      {canStart && (
+                        <button
+                          onClick={() => handleStart(booking._id)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
+                        >
+                          <Play className="w-4 h-4" />
+                          Start Session
+                        </button>
+                      )}
+                      {isScheduled && !isMentor && (
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                          <CheckCircle className="w-4 h-4" />
+                          Paid
+                        </span>
+                      )}
+                      {isScheduled && isMentor && !canStart && (
                         <div className="text-sm text-white/40 px-2">
                           <Clock className="inline w-4 h-4 mr-1" />
                           {(() => {
-                            const ms = new Date(booking.scheduledAt) - new Date();
+                            const ms = startTime.getTime() - now.getTime();
                             const m = Math.floor(ms / 60000);
                             const h = Math.floor(m / 60);
                             return `${h > 0 ? `${h}h ` : ""}${m % 60}m`;
                           })()}
                         </div>
                       )}
-                      {isMentor && (ts === "ready_to_start" || ts === "active") && (
-                        <button
-                          onClick={() => handleStart(booking)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
-                        >
-                          <Play className="w-4 h-4" />
-                          {ts === "active" ? "Join Session" : "Start Session"}
-                        </button>
-                      )}
-                      {ts === "active" && (
-                        <Link
-                          href={`/session/${booking._id}`}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-white/[0.06] text-primary hover:bg-white/[0.10]"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                          Chat
-                        </Link>
-                      )}
-                      {ts === "expired" && (
-                        <span className="px-4 py-2 text-sm text-red-500">Session Expired</span>
-                      )}
-                      {ts === "completed" && (
+                      {booking.status === "completed" && (
                         <span className="px-4 py-2 text-sm text-gray-500">Session Ended</span>
                       )}
                     </div>

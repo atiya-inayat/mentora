@@ -18,7 +18,6 @@ import {
   Send,
   MessageSquare,
   StopCircle,
-  CalendarClock,
   X,
   Paperclip,
   FileText,
@@ -36,9 +35,6 @@ export default function SessionPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [showChat, setShowChat] = useState(false);
-  const [showPostpone, setShowPostpone] = useState(false);
-  const [newDate, setNewDate] = useState("");
-  const [postponing, setPostponing] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -52,13 +48,13 @@ export default function SessionPage() {
   const menteeId = session?.bookingId?.menteeId?._id;
   const isMentor = user?.id === mentorId;
   const receiverId = isMentor ? menteeId : mentorId;
-  const isOngoing = session?.status === "ongoing";
+  const isLive = session?.status === "live";
+  const isCompleted = session?.status === "completed";
   const timeStatus = session?.timeStatus || "upcoming";
-  const isExpired = timeStatus === "expired" || timeStatus === "completed";
   const scheduledAt = session?.scheduledAt;
 
-  const canVideoCall = isOngoing && timeStatus === "active" && !isExpired;
-  const canChat = isOngoing && timeStatus === "active" && !isExpired;
+  const canVideoCall = isLive;
+  const canChat = isLive;
 
   useEffect(() => {
     if (!sessionId) return;
@@ -78,7 +74,7 @@ export default function SessionPage() {
 
     socket.on("session_ended", () => {
       setError("Session has ended. Redirecting...");
-      setTimeout(() => router.push("/my-sessions"), 2000);
+      setTimeout(() => router.push("/bookings"), 2000);
     });
 
     socket.on("error", ({ message }) => {
@@ -157,21 +153,6 @@ export default function SessionPage() {
     }
   };
 
-  const handlePostpone = async () => {
-    if (!newDate) return;
-    setPostponing(true);
-    try {
-      await api.put(`/api/sessions/${session?.bookingId?._id}/postpone`, {
-        newScheduledAt: newDate,
-      });
-      router.push("/my-sessions");
-    } catch (err) {
-      setError(err?.response?.data?.message || "Failed to postpone session");
-    } finally {
-      setPostponing(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -198,10 +179,10 @@ export default function SessionPage() {
 
       <div className="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <Link
-          href="/my-sessions"
+          href="/bookings"
           className="inline-flex items-center gap-1 mb-3 text-xs transition text-white/40 hover:text-primary"
         >
-          ← Back to Sessions
+          ← Back to Bookings
         </Link>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -233,24 +214,15 @@ export default function SessionPage() {
               </button>
             )}
 
-            {isMentor && isOngoing && !isExpired && (
-              <>
-                <button
-                  onClick={() => setShowPostpone(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full glass-card text-amber-400 hover:bg-white/[0.08]"
-                >
-                  <CalendarClock className="w-4 h-4" />
-                  Postpone
-                </button>
-                <button
-                  onClick={() => setShowEndConfirm(true)}
-                  disabled={ending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/[0.15] disabled:opacity-50"
-                >
-                  <StopCircle className="w-4 h-4" />
-                  {ending ? "Ending..." : "End Session"}
-                </button>
-              </>
+            {isMentor && isLive && (
+              <button
+                onClick={() => setShowEndConfirm(true)}
+                disabled={ending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/[0.15] disabled:opacity-50"
+              >
+                <StopCircle className="w-4 h-4" />
+                {ending ? "Ending..." : "End Session"}
+              </button>
             )}
           </div>
         </div>
@@ -264,33 +236,6 @@ export default function SessionPage() {
 
         {error && (
           <div className="p-3 mt-3 mb-3 text-sm text-red-600 bg-red-100 rounded-xl">{error}</div>
-        )}
-
-        {showPostpone && (
-          <div className="p-6 mb-4 glass-card rounded-2xl">
-            <h3 className="mb-3 text-sm font-semibold text-primary">Reschedule Session</h3>
-            <div className="flex items-center gap-3">
-              <input
-                type="datetime-local"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-                className="flex-1 px-3 py-2 text-sm border rounded-lg outline-none bg-white/[0.04] border-white/5 focus:border-primary text-primary"
-              />
-              <button
-                onClick={handlePostpone}
-                disabled={postponing || !newDate}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {postponing ? "Saving..." : "Confirm"}
-              </button>
-              <button
-                onClick={() => setShowPostpone(false)}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-white/[0.04] text-primary border border-white/5 hover:bg-white/[0.06]"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
         )}
 
         <div className="relative flex gap-4">
@@ -314,7 +259,7 @@ export default function SessionPage() {
                       </p>
                     </>
                   )}
-                  {timeStatus === "ready_to_start" && (
+                  {timeStatus === "ready" && (
                     <>
                       <p className="text-lg">Session ready to start</p>
                       <p className="mt-1 text-sm opacity-50">
@@ -322,18 +267,18 @@ export default function SessionPage() {
                       </p>
                     </>
                   )}
-                  {(timeStatus === "expired" || timeStatus === "completed") && (
-                    <>
-                      <p className="text-lg">Session has ended</p>
-                      <p className="mt-1 text-sm opacity-50">This session is no longer available</p>
-                    </>
-                  )}
-                  {timeStatus === "active" && !isOngoing && (
+                  {timeStatus === "live" && !isLive && (
                     <>
                       <p className="text-lg">Session not started</p>
                       <p className="mt-1 text-sm opacity-50">
                         Please wait for the mentor to start the session
                       </p>
+                    </>
+                  )}
+                  {(timeStatus === "expired" || timeStatus === "completed" || isCompleted) && (
+                    <>
+                      <p className="text-lg">Session has ended</p>
+                      <p className="mt-1 text-sm opacity-50">This session is no longer available</p>
                     </>
                   )}
                 </div>
@@ -342,7 +287,7 @@ export default function SessionPage() {
           </div>
 
           {showChat && canChat && (
-            <div className="w-[35%] h-[70vh] flex flex-col glass-card rounded-2xl">
+            <div className="w-[35%] h-[70vh] flex flex-col card rounded-2xl">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <h3 className="text-sm font-semibold text-primary">Messages</h3>
                 <button
@@ -459,7 +404,7 @@ export default function SessionPage() {
         loading={ending}
         onConfirm={() => {
           endSession(session?.bookingId?._id, {
-            onSuccess: () => router.push("/my-sessions"),
+            onSuccess: () => router.push("/bookings"),
           });
           setShowEndConfirm(false);
         }}

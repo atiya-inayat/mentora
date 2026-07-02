@@ -2,17 +2,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import Navbar from "@/app/components/shared/Navbar";
-import { Shield, ShieldBan, ShieldCheck, Search } from "lucide-react";
+import { Shield, ShieldBan, ShieldCheck, ShieldOff, Search, CheckCircle } from "lucide-react";
 import Avatar from "@/app/components/shared/Avatar";
 import usePageTitle from "@/lib/hooks/usePageTitle";
 import { useState } from "react";
 import ConfirmDialog from "@/app/components/shared/ConfirmDialog";
+import { toast } from "sonner";
 
 export default function AdminPanel() {
   usePageTitle("Admin Panel");
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [blockTarget, setBlockTarget] = useState(null);
+  const [unblockTarget, setUnblockTarget] = useState(null);
 
   const { data: usersData, isLoading } = useQuery({
     queryKey: ["admin", "users"],
@@ -21,12 +23,29 @@ export default function AdminPanel() {
 
   const { mutate: blockUser } = useMutation({
     mutationFn: (userId) => api.put(`/api/admin/users/${userId}/block`),
-    onSuccess: () => queryClient.invalidateQueries(["admin", "users"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin", "users"]);
+      toast.success("User blocked");
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || "Failed to block user"),
+  });
+
+  const { mutate: unblockUser } = useMutation({
+    mutationFn: (userId) => api.put(`/api/admin/users/${userId}/unblock`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin", "users"]);
+      toast.success("User unblocked");
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || "Failed to unblock user"),
   });
 
   const { mutate: approveMentor } = useMutation({
     mutationFn: (mentorId) => api.put(`/api/admin/mentors/${mentorId}/approve`),
-    onSuccess: () => queryClient.invalidateQueries(["admin", "users"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin", "users"]);
+      toast.success("Mentor approved");
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || "Failed to approve mentor"),
   });
 
   if (isLoading)
@@ -69,7 +88,7 @@ export default function AdminPanel() {
           />
         </div>
 
-        <div className="overflow-hidden glass-card rounded-3xl">
+        <div className="overflow-hidden card rounded-3xl">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -114,22 +133,40 @@ export default function AdminPanel() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${
-                            u.isBlocked ? "bg-red-100 text-red-600" : "bg-white/[0.06] text-primary"
-                          }`}
-                        >
-                          {u.isBlocked ? (
-                            <ShieldBan className="w-3 h-3" />
-                          ) : (
-                            <ShieldCheck className="w-3 h-3" />
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${
+                              u.isBlocked
+                                ? "bg-red-500/10 text-red-400"
+                                : "bg-white/[0.06] text-primary"
+                            }`}
+                          >
+                            {u.isBlocked ? (
+                              <ShieldBan className="w-3 h-3" />
+                            ) : (
+                              <ShieldCheck className="w-3 h-3" />
+                            )}
+                            {u.isBlocked ? "Blocked" : "Active"}
+                          </span>
+                          {u.role === "mentor" && u.isApproved === "approved" && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full bg-green-500/10 text-green-400">
+                              <CheckCircle className="w-3 h-3" />
+                              Approved
+                            </span>
                           )}
-                          {u.isBlocked ? "Blocked" : "Active"}
-                        </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {!u.isBlocked && (
+                          {u.isBlocked ? (
+                            <button
+                              onClick={() => setUnblockTarget(u)}
+                              className="px-3 py-1.5 text-xs font-medium transition rounded-full bg-green-500/10 text-green-400 hover:bg-green-500/[0.15]"
+                            >
+                              <ShieldOff className="inline w-3 h-3 mr-1" />
+                              Unblock
+                            </button>
+                          ) : (
                             <button
                               onClick={() => setBlockTarget(u)}
                               className="px-3 py-1.5 text-xs font-medium transition rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/[0.15]"
@@ -137,7 +174,7 @@ export default function AdminPanel() {
                               Block
                             </button>
                           )}
-                          {u.role === "mentor" && (
+                          {u.role === "mentor" && u.isApproved !== "approved" && (
                             <button
                               onClick={() => approveMentor(u._id)}
                               className="px-3 py-1.5 text-xs font-medium transition rounded-full bg-white/[0.06] text-primary hover:bg-white/[0.10]"
@@ -167,6 +204,21 @@ export default function AdminPanel() {
           if (blockTarget) {
             blockUser(blockTarget._id);
             setBlockTarget(null);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!unblockTarget}
+        onOpenChange={(open) => !open && setUnblockTarget(null)}
+        title="Unblock User"
+        description={`Restore access for ${unblockTarget?.name || "this user"}?`}
+        confirmLabel="Unblock User"
+        variant="primary"
+        onConfirm={() => {
+          if (unblockTarget) {
+            unblockUser(unblockTarget._id);
+            setUnblockTarget(null);
           }
         }}
       />

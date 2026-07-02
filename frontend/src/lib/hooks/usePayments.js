@@ -1,11 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 
-export const useInitiatePayment = () => {
+export const useCreateCheckout = () => {
   return useMutation({
-    mutationFn: async (bookingId) => {
-      const res = await api.post(`/api/payments/initiate/${bookingId}`);
-      return res.data;
-    },
+    mutationFn: ({ slotId, notes }) =>
+      api.post("/api/payments/create-checkout", { slotId, notes }).then((r) => r.data),
   });
 };

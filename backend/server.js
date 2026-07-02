@@ -24,6 +24,8 @@ import uploadRoutes from "./src/routes/uploadRoutes.js";
 import avatarRoutes from "./src/routes/avatarRoutes.js";
 import notificationRoutes from "./src/routes/notificationRoutes.js";
 import passwordResetRoutes from "./src/routes/passwordResetRoutes.js";
+import availabilityRoutes from "./src/routes/availabilityRoutes.js";
+import slotRoutes from "./src/routes/slotRoutes.js";
 import { protect } from "./src/middleware/authMiddleware.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -83,6 +85,8 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/users", avatarRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/auth", passwordResetRoutes);
+app.use("/api/availability", availabilityRoutes);
+app.use("/api/slots", slotRoutes);
 app.use(errorHandler);
 
 connectDB().then(() => {

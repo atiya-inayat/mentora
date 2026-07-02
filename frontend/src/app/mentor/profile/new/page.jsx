@@ -94,7 +94,7 @@ export default function CreateMentorProfile() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[80vh] px-4">
-          <div className="p-12 text-center glass-card rounded-3xl max-w-md w-full">
+          <div className="p-12 text-center card rounded-3xl max-w-md w-full">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/[0.06]">
               <CheckCircle className="w-8 h-8 text-primary" />
             </div>

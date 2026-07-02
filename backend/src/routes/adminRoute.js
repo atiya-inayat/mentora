@@ -2,12 +2,13 @@ import express from "express";
 import {
   approveMentor,
   blockUser,
+  unblockUser,
   getAllBookings,
   getAllUsers,
 } from "../controllers/adminController.js";
 import { protect, restrictTo } from "../middleware/authMiddleware.js";
 import validate from "../middleware/validate.js";
-import { blockUserSchema, approveMentorSchema } from "../validators/adminValidators.js";
+import { blockUserSchema, approveMentorSchema, unblockUserSchema } from "../validators/adminValidators.js";
 
 const router = express.Router();
 
@@ -19,6 +20,13 @@ router.put(
   restrictTo("admin"),
   validate(blockUserSchema),
   blockUser,
+);
+router.put(
+  "/users/:userId/unblock",
+  protect,
+  restrictTo("admin"),
+  validate(unblockUserSchema),
+  unblockUser,
 );
 router.put(
   "/mentors/:mentorId/approve",

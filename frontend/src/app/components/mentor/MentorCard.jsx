@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star, User } from "lucide-react";
+import { Star, User, Calendar, Clock } from "lucide-react";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -11,6 +11,9 @@ export default function MentorCard({ mentor }) {
       ? mentor.userId.photo
       : `${baseUrl}${mentor.userId.photo}`
     : null;
+
+  const summary = mentor.availabilitySummary;
+  const nextSlot = mentor.nextAvailableSlot;
 
   return (
     <Link
@@ -43,6 +46,28 @@ export default function MentorCard({ mentor }) {
           {mentor.userId?.name}
         </h3>
 
+        {summary ? (
+          <div className="mt-3 space-y-1">
+            {nextSlot ? (
+              <div className="flex items-center gap-1.5 text-xs text-green-400">
+                <Clock className="w-3 h-3" />
+                <span>Next: {nextSlot.formattedDate} &middot; {nextSlot.formattedTime}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-green-400">
+                <Calendar className="w-3 h-3" />
+                <span>Available: {summary.shortDays.join(", ")}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 text-xs text-muted">
+              <Calendar className="w-3 h-3" />
+              <span>{summary.days.length} day{summary.days.length > 1 ? "s" : ""} available</span>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 text-xs text-muted">Availability not set</div>
+        )}
+
         <div className="flex flex-wrap gap-1.5 mt-3">
           {mentor.skills?.slice(0, 3).map((skill, i) => (
             <span
@@ -60,9 +85,7 @@ export default function MentorCard({ mentor }) {
         </div>
 
         <div className="flex items-baseline gap-1 mt-4 pt-4 border-t border-border">
-          <span className="text-lg font-semibold text-foreground">
-            ${mentor.hourlyRate}
-          </span>
+          <span className="text-lg font-semibold text-foreground">${mentor.hourlyRate}</span>
           <span className="text-sm text-muted">/hr</span>
         </div>
       </div>

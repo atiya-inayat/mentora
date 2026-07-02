@@ -67,12 +67,13 @@ const isProtectedRoute = (pathname) => {
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/mentor/dashboard") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/bookings") ||
     pathname.startsWith("/my-bookings") ||
     pathname.startsWith("/my-sessions") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/payment/") ||
     pathname.startsWith("/review/") ||
-    pathname.startsWith("/session/")
+    pathname.startsWith("/session/") ||
+    pathname.startsWith("/payment/success")
   );
 };
 
@@ -139,6 +140,7 @@ export const config = {
   matcher: [
     // Match user dashboard routes
     "/dashboard/:path*",
+    "/bookings/:path*",
     "/my-bookings/:path*",
     "/my-sessions/:path*",
     // Match mentor routes explicitly
@@ -152,10 +154,9 @@ export const config = {
     "/register",
     // Match settings
     "/settings/:path*",
-    // Match payment and review
-    "/payment/:path*",
+    // Match payment success and review
+    "/payment/success",
     "/review/:path*",
-    // Match session
     "/session/:path*",
   ],
 };

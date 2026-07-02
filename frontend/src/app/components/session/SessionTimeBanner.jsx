@@ -30,7 +30,7 @@ export default function SessionTimeBanner({
         </span>
         <div className="mt-1.5 text-sm text-blue-400/80">
           <Clock className="inline w-4 h-4 mr-1" />
-          Time remaining until your next session:{" "}
+          Time remaining until session:{" "}
           <span className="font-semibold">
             {hours > 0 ? `${hours}h ` : ""}
             {mins}m
@@ -40,7 +40,7 @@ export default function SessionTimeBanner({
     );
   }
 
-  if (timeStatus === "ready_to_start") {
+  if (timeStatus === "ready") {
     const ms = Math.max(0, timeRemaining);
     const totalMins = Math.ceil(ms / 60000);
     const hours = Math.floor(totalMins / 60);
@@ -53,11 +53,11 @@ export default function SessionTimeBanner({
           Session is ready to start!{" "}
           {hours > 0 || mins > 0 ? (
             <span className="text-green-600/80 text-sm">
-              (Starts in {hours > 0 ? `${hours}h ` : ""}
+              (Available in {hours > 0 ? `${hours}h ` : ""}
               {mins}m)
             </span>
           ) : (
-            <span className="text-green-600/80 text-sm">(Starting now)</span>
+            <span className="text-green-600/80 text-sm">(Available now)</span>
           )}
         </span>
       </div>

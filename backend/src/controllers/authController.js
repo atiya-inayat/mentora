@@ -31,7 +31,7 @@ const hashToken = (token) => {
 const getCookieOptions = (maxAge) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production" || process.env.SECURE_COOKIES === "true",
-  sameSite: "strict",
+  sameSite: "lax",
   path: "/",
   maxAge: maxAge,
 });
@@ -136,13 +136,13 @@ const clearAuthCookies = (res) => {
     path: "/",
     httpOnly: true,
     secure: isSecure,
-    sameSite: "strict",
+    sameSite: "lax",
   });
   res.clearCookie("refreshToken", {
     path: "/",
     httpOnly: true,
     secure: isSecure,
-    sameSite: "strict",
+    sameSite: "lax",
   });
 };
 

@@ -1,19 +1,40 @@
-//  this is where payment logic lives - controller stay clean and complex logic lives in service
-
 import stripe from "../config/stripe.js";
 
-export const createPaymentIntent = async (amount, mentorStripeId, bookingId) => {
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amount * 100,
-    currency: "usd",
+const DOMAIN = process.env.FRONTEND_URL || "http://localhost:3000";
+
+export const createCheckoutSession = async (amount, mentorStripeId, slotId, mentorId, menteeId, notes) => {
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
     payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: { name: "Mentoring Session" },
+          unit_amount: amount * 100,
+        },
+        quantity: 1,
+      },
+    ],
     metadata: {
-      bookingId: bookingId.toString(),
+      slotId: slotId.toString(),
+      mentorId: mentorId.toString(),
+      menteeId: menteeId.toString(),
+      notes: notes || "",
     },
+    success_url: `${DOMAIN}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${DOMAIN}/mentors/${mentorId}?cancelled=true`,
   });
 
-  return {
-    clientSecret: paymentIntent.client_secret,
-    paymentIntentId: paymentIntent.id,
-  };
+  return session;
+};
+
+export const createTransfer = async (amount, destinationStripeAccountId) => {
+  const totalCents = amount * 100;
+  const mentorShare = Math.floor(totalCents * 0.9);
+  return stripe.transfers.create({
+    amount: mentorShare,
+    currency: "usd",
+    destination: destinationStripeAccountId,
+  });
 };
