@@ -172,9 +172,7 @@ export default function MenteeDashboard() {
               <h1 className="text-3xl font-semibold text-foreground">
                 Welcome back, {user?.name}
               </h1>
-              <p className="mt-1 text-muted">
-                Track your mentoring sessions
-              </p>
+              <p className="mt-1 text-muted">Track your mentoring sessions</p>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -192,7 +190,7 @@ export default function MenteeDashboard() {
               </Link>
             </div>
 
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div className="p-4 card">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-background">
@@ -258,7 +256,10 @@ export default function MenteeDashboard() {
                     const isLive = session?.status === "live";
                     const isScheduled = session?.status === "scheduled";
                     const startTime = new Date(booking.startTime);
-                    const showJoin = isLive || (isScheduled && startTime <= new Date(now.getTime() + 15 * 60 * 1000));
+                    const showJoin =
+                      isLive ||
+                      (isScheduled &&
+                        startTime <= new Date(now.getTime() + 15 * 60 * 1000));
 
                     return (
                       <div
@@ -303,9 +304,12 @@ export default function MenteeDashboard() {
                               Paid
                             </span>
                           )}
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status] || "bg-white/5 text-white/60"}`}>
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status] || "bg-white/5 text-white/60"}`}
+                          >
                             <Clock className="w-3 h-3" />
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            {booking.status.charAt(0).toUpperCase() +
+                              booking.status.slice(1)}
                           </span>
                         </div>
                       </div>
@@ -336,20 +340,25 @@ export default function MenteeDashboard() {
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-white/40" />
                           <p className="text-sm text-white/60">
-                            {new Date(booking.startTime).toLocaleDateString("en-US", {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {new Date(booking.startTime).toLocaleDateString(
+                              "en-US",
+                              {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status]}`}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status]}`}
+                        >
                           <CheckCircle className="w-3 h-3" />
                           Completed
                         </span>
@@ -390,16 +399,21 @@ export default function MenteeDashboard() {
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-white/40" />
                           <p className="text-sm text-white/60">
-                            {new Date(booking.startTime).toLocaleDateString("en-US", {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
+                            {new Date(booking.startTime).toLocaleDateString(
+                              "en-US",
+                              {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              },
+                            )}
                           </p>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status]}`}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status]}`}
+                      >
                         <XCircle className="w-3 h-3" />
                         Cancelled
                       </span>
