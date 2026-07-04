@@ -1,5 +1,6 @@
 "use client";
 import { useMyBookings } from "@/lib/hooks/useBookings";
+import { useJoinSession } from "@/lib/hooks/useSession";
 import Navbar from "../components/shared/Navbar";
 import Avatar from "../components/shared/Avatar";
 import useAuthStore from "@/lib/store/authStore";
@@ -14,6 +15,7 @@ import usePageTitle from "@/lib/hooks/usePageTitle";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   BookOpen,
@@ -37,8 +39,10 @@ const statusStyles = {
 
 export default function MenteeDashboard() {
   usePageTitle("Dashboard");
+  const router = useRouter();
   const { user, updateUser } = useAuthStore();
   const { data, isLoading, isError, error, refetch } = useMyBookings();
+  const { mutate: joinSession, isPending: joining } = useJoinSession();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -64,6 +68,17 @@ export default function MenteeDashboard() {
       setUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleJoinSession = (bookingId) => {
+    joinSession(bookingId, {
+      onSuccess: (res) => {
+        if (res?.data?._id) {
+          router.push(`/session/${res.data._id}`);
+        }
+      },
+      onError: (err) => toast.error(err?.response?.data?.message || "Cannot join session"),
+    });
   };
 
   if (isError) {
@@ -253,13 +268,15 @@ export default function MenteeDashboard() {
                 <div className="space-y-3">
                   {upcoming.map((booking) => {
                     const session = booking.session;
-                    const isLive = session?.status === "live";
-                    const isScheduled = session?.status === "scheduled";
                     const startTime = new Date(booking.startTime);
-                    const showJoin =
-                      isLive ||
-                      (isScheduled &&
-                        startTime <= new Date(now.getTime() + 15 * 60 * 1000));
+                    const joinWindow = new Date(startTime.getTime() - 15 * 60 * 1000);
+                    const nowTime = now.getTime();
+                    const canJoin = nowTime >= joinWindow.getTime();
+                    const isLive = session?.status === "live";
+                    const isWaiting = session?.status === "waiting";
+                    const hasSession = !!session;
+                    const msToStart = startTime.getTime() - nowTime;
+                    const totalMins = Math.max(0, Math.ceil(msToStart / 60000));
 
                     return (
                       <div
@@ -289,28 +306,30 @@ export default function MenteeDashboard() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {showJoin && session && (
+                          {(isLive || isWaiting) && hasSession && (
                             <Link
                               href={`/session/${session._id}`}
                               className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium btn-primary rounded-full"
                             >
-                              <MessageSquare className="w-4 h-4" />
                               Join Session
                             </Link>
                           )}
-                          {!showJoin && (
-                            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                              <CheckCircle className="w-4 h-4" />
-                              Paid
-                            </span>
+                          {!hasSession && canJoin && (
+                            <button
+                              onClick={() => handleJoinSession(booking._id)}
+                              disabled={joining}
+                              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium btn-primary rounded-full disabled:opacity-50"
+                            >
+                              Join Session
+                            </button>
                           )}
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusStyles[booking.status] || "bg-white/5 text-white/60"}`}
-                          >
-                            <Clock className="w-3 h-3" />
-                            {booking.status.charAt(0).toUpperCase() +
-                              booking.status.slice(1)}
-                          </span>
+                          {!hasSession && !canJoin && (
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-xs text-white/40">
+                                Can join in {Math.floor(totalMins / 60) > 0 ? `${Math.floor(totalMins / 60)}h ` : ""}{totalMins % 60}m
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

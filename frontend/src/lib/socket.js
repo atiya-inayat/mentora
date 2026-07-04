@@ -4,9 +4,10 @@ let socket = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_API_URL, {
+    socket = io({
       autoConnect: false,
       withCredentials: true,
+      transports: ["polling"],
     });
   }
   return socket;

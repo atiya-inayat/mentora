@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
-import { useSession, useEndSession } from "@/lib/hooks/useSession";
+import { useSession, useJoinSession, useEndSession } from "@/lib/hooks/useSession";
 import useAuthStore from "@/lib/store/authStore";
 import Navbar from "@/app/components/shared/Navbar";
 import ConfirmDialog from "@/app/components/shared/ConfirmDialog";
@@ -22,6 +22,10 @@ import {
   Paperclip,
   FileText,
   Download,
+  Clock,
+  User,
+  Loader,
+  Video,
 } from "lucide-react";
 
 export default function SessionPage() {
@@ -29,7 +33,8 @@ export default function SessionPage() {
   const { session: sessionId } = useParams();
   const { user } = useAuthStore();
   const router = useRouter();
-  const { data: sessionData, isLoading } = useSession(sessionId);
+  const { data: sessionData, isLoading, refetch } = useSession(sessionId);
+  const { mutate: joinSession, isPending: joining } = useJoinSession();
   const { mutate: endSession, isPending: ending } = useEndSession();
 
   const [messages, setMessages] = useState([]);
@@ -39,7 +44,6 @@ export default function SessionPage() {
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -48,13 +52,18 @@ export default function SessionPage() {
   const menteeId = session?.bookingId?.menteeId?._id;
   const isMentor = user?.id === mentorId;
   const receiverId = isMentor ? menteeId : mentorId;
-  const isLive = session?.status === "live";
   const isCompleted = session?.status === "completed";
   const timeStatus = session?.timeStatus || "upcoming";
   const scheduledAt = session?.scheduledAt;
+  const waitingFor = session?.waitingFor || [];
+  const isLive = session?.status === "live";
 
   const canVideoCall = isLive;
   const canChat = isLive;
+
+  const handleSessionStarted = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -72,7 +81,13 @@ export default function SessionPage() {
       setMessages((prev) => [...prev, message]);
     });
 
+    socket.on("session_started", () => {
+      handleSessionStarted();
+      refetch();
+    });
+
     socket.on("session_ended", () => {
+      setIsLive(false);
       setError("Session has ended. Redirecting...");
       setTimeout(() => router.push("/bookings"), 2000);
     });
@@ -85,11 +100,12 @@ export default function SessionPage() {
     return () => {
       socket.off("session_messages");
       socket.off("receive_message");
+      socket.off("session_started");
       socket.off("session_ended");
       socket.off("error");
       disconnectSocket();
     };
-  }, [sessionId, router]);
+  }, [sessionId, router, handleSessionStarted, refetch]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,7 +121,6 @@ export default function SessionPage() {
     });
 
     setMessages((prev) => [...prev, { content: input, senderId: user?.id, createdAt: new Date() }]);
-
     setInput("");
   };
 
@@ -153,6 +168,25 @@ export default function SessionPage() {
     }
   };
 
+  const getOtherParticipantName = () => {
+    if (!session?.bookingId) return "the other participant";
+    if (isMentor) return session.bookingId.menteeId?.name || "Mentee";
+    return session.bookingId.mentorId?.name || "Mentor";
+  };
+
+  const getWaitingMessage = () => {
+    if (waitingFor.includes("mentor") && waitingFor.includes("mentee")) {
+      return "Waiting for participants to join...";
+    }
+    if (waitingFor.includes("mentor")) {
+      return "You're in the session. Waiting for the mentor to join...";
+    }
+    if (waitingFor.includes("mentee")) {
+      return "You're in the session. Waiting for the mentee to join...";
+    }
+    return "Waiting for participants...";
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -184,6 +218,7 @@ export default function SessionPage() {
         >
           ← Back to Bookings
         </Link>
+
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <MessageSquare className="w-6 h-6 text-primary" />
@@ -234,6 +269,26 @@ export default function SessionPage() {
           readyToStartIn={session?.readyToStartIn}
         />
 
+        {(timeStatus === "ready" || (timeStatus === "waiting" && !session?.participants?.[isMentor ? "mentor" : "mentee"])) && (
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => {
+                const bookingId = session?.bookingId?._id || session?.bookingId;
+                joinSession(bookingId, {
+                  onSuccess: () => refetch(),
+                  onError: (err) =>
+                    toast.error(err?.response?.data?.message || "Cannot join session"),
+                });
+              }}
+              disabled={joining}
+              className="inline-flex items-center gap-2 px-8 py-3 text-base font-medium btn-primary rounded-xl disabled:opacity-50"
+            >
+              <Video className="w-5 h-5" />
+              {joining ? "Joining..." : "Join Session"}
+            </button>
+          </div>
+        )}
+
         {error && (
           <div className="p-3 mt-3 mb-3 text-sm text-red-600 bg-red-100 rounded-xl">{error}</div>
         )}
@@ -248,6 +303,33 @@ export default function SessionPage() {
                   isMentor={isMentor}
                   onCallEnded={() => {}}
                 />
+              ) : timeStatus === "waiting" || session?.status === "waiting" ? (
+                <div className="flex flex-col items-center justify-center w-full h-full bg-gray-900 text-white/70 px-6">
+                  <div className="relative mb-6">
+                    <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Video className="w-10 h-10 text-primary" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center">
+                      <Clock className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  </div>
+                  <p className="text-xl font-medium text-white mb-2">
+                    {"You're connected"}
+                  </p>
+                  <p className="text-sm text-white/50 text-center max-w-sm">
+                    {getWaitingMessage()}
+                  </p>
+                  <div className="flex items-center gap-3 mt-6">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04]">
+                      <div className={`w-2 h-2 rounded-full ${waitingFor.includes("mentor") ? "bg-yellow-400 animate-pulse" : "bg-green-400"}`} />
+                      <span className="text-xs text-white/60">Mentor</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04]">
+                      <div className={`w-2 h-2 rounded-full ${waitingFor.includes("mentee") ? "bg-yellow-400 animate-pulse" : "bg-green-400"}`} />
+                      <span className="text-xs text-white/60">Mentee</span>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center w-full h-full bg-gray-900 text-white/70">
                   <MessageSquare className="w-16 h-16 mb-4 opacity-30" />
@@ -263,15 +345,7 @@ export default function SessionPage() {
                     <>
                       <p className="text-lg">Session ready to start</p>
                       <p className="mt-1 text-sm opacity-50">
-                        Video and chat will activate once the session begins
-                      </p>
-                    </>
-                  )}
-                  {timeStatus === "live" && !isLive && (
-                    <>
-                      <p className="text-lg">Session not started</p>
-                      <p className="mt-1 text-sm opacity-50">
-                        Please wait for the mentor to start the session
+                        Video and chat will activate once both participants join
                       </p>
                     </>
                   )}

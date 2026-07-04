@@ -72,23 +72,37 @@ const getAvailabilitySummary = (availability) => {
 };
 
 const enrichWithAvailability = async (mentors) => {
-  const userIds = mentors.map((m) => (m.userId?._id || m.userId).toString());
+  const userIds = mentors
+    .map((m) => {
+      const id = m.userId?._id || m.userId;
+      return id ? id.toString() : null;
+    })
+    .filter(Boolean);
+
   const availabilities = await Availability.find({ mentorId: { $in: userIds } });
   const availMap = {};
   for (const a of availabilities) {
     availMap[a.mentorId.toString()] = a;
   }
-  return mentors.map((m) => {
+
+  const result = [];
+  for (const m of mentors) {
+    const id = m.userId?._id || m.userId;
+    if (!id) {
+      console.warn("Skipping mentor profile with missing userId reference:", m._id?.toString() || "(unknown)");
+      continue;
+    }
+    const uid = id.toString();
     const obj = m.toObject ? m.toObject() : m;
-    const uid = (obj.userId?._id || obj.userId)?.toString();
     const availability = availMap[uid] || null;
-    return {
+    result.push({
       ...obj,
       availability: availability ? availability.toObject() : null,
       availabilitySummary: getAvailabilitySummary(availability),
       nextAvailableSlot: computeNextAvailableSlot(availability),
-    };
-  });
+    });
+  }
+  return result;
 };
 
 export const createMentorProfile = async (req, res) => {

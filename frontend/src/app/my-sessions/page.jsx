@@ -1,12 +1,12 @@
 "use client";
 import { useMyBookings } from "@/lib/hooks/useBookings";
-import { useStartSession } from "@/lib/hooks/useSession";
+import { useJoinSession } from "@/lib/hooks/useSession";
 import useAuthStore from "@/lib/store/authStore";
 import Navbar from "@/app/components/shared/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner, CardSkeleton } from "@/app/components/shared/LoadingSkeleton";
-import { Calendar, User, MessageSquare, Play, AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { Calendar, User, MessageSquare, Clock, CheckCircle } from "lucide-react";
 import usePageTitle from "@/lib/hooks/usePageTitle";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ export default function MySessionsPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const { data, isLoading } = useMyBookings();
-  const { mutate: startSession } = useStartSession();
+  const { mutate: joinSession, isPending: joining } = useJoinSession();
 
   if (isLoading)
     return (
@@ -39,12 +39,12 @@ export default function MySessionsPage() {
   const sessions = bookings.filter((b) => b.status === "confirmed" || b.status === "completed");
   const isMentor = user?.role === "mentor";
 
-  const handleStart = (bookingId) => {
-    startSession(bookingId, {
+  const handleJoin = (bookingId) => {
+    joinSession(bookingId, {
       onSuccess: (res) => {
         if (res?.data?._id) router.push(`/session/${res.data._id}`);
       },
-      onError: (err) => toast.error(err?.response?.data?.message || "Cannot start session"),
+      onError: (err) => toast.error(err?.response?.data?.message || "Cannot join session"),
     });
   };
 
@@ -74,11 +74,15 @@ export default function MySessionsPage() {
             {sessions.map((booking) => {
               const otherParty = isMentor ? booking.menteeId : booking.mentorId;
               const session = booking.session;
-              const isLive = session?.status === "live";
-              const isScheduled = session?.status === "scheduled";
               const startTime = new Date(booking.startTime);
-              const now = new Date();
-              const canStart = isMentor && isScheduled && startTime <= new Date(now.getTime() + 15 * 60 * 1000);
+              const nowTime = new Date().getTime();
+              const joinWindow = new Date(startTime.getTime() - 15 * 60 * 1000);
+              const canJoin = nowTime >= joinWindow.getTime();
+              const isLive = session?.status === "live";
+              const isWaiting = session?.status === "waiting";
+              const hasSession = !!session;
+              const msToStart = startTime.getTime() - nowTime;
+              const totalMins = Math.max(0, Math.ceil(msToStart / 60000));
 
               return (
                 <div
@@ -112,39 +116,28 @@ export default function MySessionsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {isLive && (
+                      {(isLive || isWaiting) && hasSession && (
                         <Link
                           href={`/session/${session._id}`}
                           className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
                         >
-                          <MessageSquare className="w-4 h-4" />
                           Join Session
                         </Link>
                       )}
-                      {canStart && (
+                      {!hasSession && canJoin && (
                         <button
-                          onClick={() => handleStart(booking._id)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
+                          onClick={() => handleJoin(booking._id)}
+                          disabled={joining}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full disabled:opacity-50"
                         >
-                          <Play className="w-4 h-4" />
-                          Start Session
+                          Join Session
                         </button>
                       )}
-                      {isScheduled && !isMentor && (
-                        <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                          <CheckCircle className="w-4 h-4" />
-                          Paid
-                        </span>
-                      )}
-                      {isScheduled && isMentor && !canStart && (
-                        <div className="text-sm text-white/40 px-2">
-                          <Clock className="inline w-4 h-4 mr-1" />
-                          {(() => {
-                            const ms = startTime.getTime() - now.getTime();
-                            const m = Math.floor(ms / 60000);
-                            const h = Math.floor(m / 60);
-                            return `${h > 0 ? `${h}h ` : ""}${m % 60}m`;
-                          })()}
+                      {!hasSession && !canJoin && (
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-xs text-white/40">
+                            Can join in {Math.floor(totalMins / 60) > 0 ? `${Math.floor(totalMins / 60)}h ` : ""}{totalMins % 60}m
+                          </span>
                         </div>
                       )}
                       {booking.status === "completed" && (

@@ -33,7 +33,12 @@ export const getMyBookings = async (req, res) => {
       return {
         ...obj,
         session: session
-          ? { _id: session._id, status: session.status, scheduledAt: session.scheduledAt }
+          ? {
+              _id: session._id,
+              status: session.status,
+              scheduledAt: session.scheduledAt,
+              participants: session.participants,
+            }
           : null,
         reviewed: !!reviewMap[b._id.toString()],
       };

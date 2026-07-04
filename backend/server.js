@@ -32,8 +32,14 @@ import { Server } from "socket.io";
 import { initSocket } from "./src/socket/socketHandler.js";
 import { setIO } from "./src/socket/socketEmitter.js";
 import { errorHandler } from "./src/middleware/errorMiddleware.js";
-import { limiter, registerLimiterExport } from "./src/middleware/rateLimiter.js";
-import { loginLimiter, createBackoffMiddleware } from "./src/middleware/advancedRateLimiter.js";
+import {
+  limiter,
+  registerLimiterExport,
+} from "./src/middleware/rateLimiter.js";
+import {
+  loginLimiter,
+  createBackoffMiddleware,
+} from "./src/middleware/advancedRateLimiter.js";
 
 const authBackoff = createBackoffMiddleware();
 import cookieParser from "cookie-parser";
@@ -59,7 +65,7 @@ app.use(
   cors({
     origin: corsOrigins,
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -72,6 +78,11 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use(cookieParser());
 app.use("/uploads", protect, express.static(uploadsDir));
 app.use(limiter);
+
+app.get("/health", (req, res) => {
+  res.send("OK");
+});
+
 app.use("/api/auth/register", authBackoff, registerLimiterExport);
 app.use("/api/auth/login", authBackoff, loginLimiter);
 app.use("/api/auth", router);
@@ -90,7 +101,7 @@ app.use("/api/slots", slotRoutes);
 app.use(errorHandler);
 
 connectDB().then(() => {
-  httpServer.listen(PORT, () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
   });
 });

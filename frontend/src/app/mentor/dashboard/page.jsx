@@ -1,6 +1,6 @@
 "use client";
 import { useMyBookings } from "@/lib/hooks/useBookings";
-import { useStartSession, useEndSession } from "@/lib/hooks/useSession";
+import { useJoinSession, useEndSession } from "@/lib/hooks/useSession";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import Navbar from "@/app/components/shared/Navbar";
@@ -52,7 +52,7 @@ export default function MentorDashboard() {
   });
 
   const { data, isLoading, isError, error, refetch } = useMyBookings();
-  const { mutate: startSession } = useStartSession();
+  const { mutate: joinSession, isPending: joining } = useJoinSession();
   const { mutate: endSession } = useEndSession();
 
   const handlePhotoChange = async (e) => {
@@ -117,14 +117,14 @@ export default function MentorDashboard() {
   const upcoming = confirmed.filter((b) => new Date(b.startTime) >= now);
   const completed = bookings.filter((b) => b.status === "completed");
 
-  const handleStartSession = (bookingId) => {
-    startSession(bookingId, {
+  const handleJoinSession = (bookingId) => {
+    joinSession(bookingId, {
       onSuccess: (res) => {
         if (res?.data?._id) {
           router.push(`/session/${res.data._id}`);
         }
       },
-      onError: (err) => toast.error(err?.response?.data?.message || "Cannot start session"),
+      onError: (err) => toast.error(err?.response?.data?.message || "Cannot join session"),
     });
   };
 
@@ -254,10 +254,15 @@ export default function MentorDashboard() {
             <div className="space-y-4">
               {upcoming.map((booking) => {
                 const session = booking.session;
-                const isLive = session?.status === "live";
-                const isScheduled = session?.status === "scheduled";
                 const startTime = new Date(booking.startTime);
-                const canStart = isScheduled && startTime <= new Date(now.getTime() + 15 * 60 * 1000);
+                const joinWindow = new Date(startTime.getTime() - 15 * 60 * 1000);
+                const nowTime = now.getTime();
+                const canJoin = nowTime >= joinWindow.getTime();
+                const isLive = session?.status === "live";
+                const isWaiting = session?.status === "waiting";
+                const hasSession = !!session;
+                const msToStart = startTime.getTime() - nowTime;
+                const totalMins = Math.max(0, Math.ceil(msToStart / 60000));
 
                 return (
                   <div
@@ -291,33 +296,28 @@ export default function MentorDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {isLive && (
+                      {(isLive || isWaiting) && hasSession && (
                         <button
                           onClick={() => router.push(`/session/${session._id}`)}
                           className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
                         >
-                          <MessageSquare className="w-4 h-4" />
                           Join Session
                         </button>
                       )}
-                      {canStart && (
+                      {!hasSession && canJoin && (
                         <button
-                          onClick={() => handleStartSession(booking._id)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full"
+                          onClick={() => handleJoinSession(booking._id)}
+                          disabled={joining}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium btn-primary rounded-full disabled:opacity-50"
                         >
-                          <Play className="w-4 h-4" />
-                          Start Session
+                          Join Session
                         </button>
                       )}
-                      {isScheduled && !canStart && (
-                        <div className="text-sm text-white/40 px-2">
-                          <Clock className="inline w-4 h-4 mr-1" />
-                          {(() => {
-                            const ms = startTime.getTime() - now.getTime();
-                            const m = Math.floor(ms / 60000);
-                            const h = Math.floor(m / 60);
-                            return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
-                          })()}
+                      {!hasSession && !canJoin && (
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-xs text-white/40">
+                            Can join in {Math.floor(totalMins / 60) > 0 ? `${Math.floor(totalMins / 60)}h ` : ""}{totalMins % 60}m
+                          </span>
                         </div>
                       )}
                     </div>

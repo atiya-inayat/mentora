@@ -9,8 +9,12 @@ const sessionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["scheduled", "ready", "live", "completed"],
+      enum: ["scheduled", "ready", "waiting", "live", "completed"],
       default: "scheduled",
+    },
+    participants: {
+      mentor: { type: Boolean, default: false },
+      mentee: { type: Boolean, default: false },
     },
     startTime: {
       type: Date,

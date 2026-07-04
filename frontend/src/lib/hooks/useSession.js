@@ -9,14 +9,15 @@ export const useSession = (sessionId) => {
       return res.data;
     },
     enabled: !!sessionId,
+    retry: false,
   });
 };
 
-export const useStartSession = () => {
+export const useJoinSession = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (bookingId) => {
-      const res = await api.put(`/api/sessions/${bookingId}/start`);
+      const res = await api.post(`/api/sessions/${bookingId}/join`);
       return res.data;
     },
     onSuccess: () => {
@@ -50,7 +51,7 @@ export const useMySessions = () => {
   });
 
   const sessions = (data?.data || []).filter(
-    (b) => b.status === "payment_held" || b.status === "completed",
+    (b) => b.status === "confirmed" || b.status === "completed",
   );
 
   return { sessions, allBookings: data?.data || [], isLoading };

@@ -6,10 +6,12 @@ const registerLimiter = rateLimit({
   message: {
     success: false,
     code: "RATE_LIMITED",
-    message: "Too many registration attempts. Please try again after 15 minutes.",
+    message:
+      "Too many registration attempts. Please try again after 15 minutes.",
     retryAfter: "15 minutes",
   },
   standardHeaders: true,
+  validate: { xForwardedForHeader: false },
   legacyHeaders: false,
 });
 
@@ -24,6 +26,7 @@ const loginLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 const generalLimiter = rateLimit({
@@ -36,6 +39,7 @@ const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 const backoffStore = new Map();
