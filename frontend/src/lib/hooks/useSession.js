@@ -27,6 +27,29 @@ export const useJoinSession = () => {
   });
 };
 
+export const useAdmitGuest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (sessionId) => {
+      const res = await api.post(`/api/sessions/${sessionId}/admit`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+  });
+};
+
+export const useDeclineGuest = () => {
+  return useMutation({
+    mutationFn: async (sessionId) => {
+      const res = await api.post(`/api/sessions/${sessionId}/decline`);
+      return res.data;
+    },
+  });
+};
+
 export const useEndSession = () => {
   const queryClient = useQueryClient();
   return useMutation({

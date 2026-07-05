@@ -17,18 +17,20 @@ export default function VideoCall({ socketRef, sessionId, isMentor, onCallEnded 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
+  const streamRef = useRef(null);
 
   const cleanupMedia = useCallback(() => {
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
     }
-    if (localStream) {
-      localStream.getTracks().forEach((t) => t.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     }
     setLocalStream(null);
     setRemoteStream(null);
-  }, [localStream]);
+  }, []);
 
   const endCall = useCallback(() => {
     if (socketRef.current && sessionId) {
@@ -92,62 +94,99 @@ export default function VideoCall({ socketRef, sessionId, isMentor, onCallEnded 
 
     const socket = socketRef.current;
     let initiator = false;
+    let pendingOffer = null;
+    let peerJoinedBeforeInit = false;
+
+    const createOfferForPeer = async () => {
+      if (!streamRef.current) return;
+      if (pcRef.current) {
+        pcRef.current.close();
+        pcRef.current = null;
+      }
+      const pc = createPeerConnection(streamRef.current);
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit("video-offer", { offer, sessionId });
+    };
+
+    const processPendingOffer = async () => {
+      if (!pendingOffer || !streamRef.current || initiator) return;
+      const offer = pendingOffer;
+      pendingOffer = null;
+      const pc = createPeerConnection(streamRef.current);
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("video-answer", { answer, sessionId });
+    };
+
+    socket.on("video-offer", async ({ offer }) => {
+      if (initiator) return;
+      if (!streamRef.current) {
+        pendingOffer = offer;
+        return;
+      }
+      const pc = createPeerConnection(streamRef.current);
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("video-answer", { answer, sessionId });
+    });
+
+    socket.on("video-answer", async ({ answer }) => {
+      if (!initiator) return;
+      if (pcRef.current) {
+        await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+      }
+    });
+
+    socket.on("ice-candidate", async ({ candidate }) => {
+      if (pcRef.current && candidate) {
+        try {
+          await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch {}
+      }
+    });
+
+    socket.on("call-ended", () => {
+      cleanupMedia();
+      onCallEnded?.();
+    });
+
+    socket.on("participant_present", () => {
+      if (initiator) {
+        createOfferForPeer();
+      } else {
+        peerJoinedBeforeInit = true;
+      }
+    });
 
     const init = async () => {
       const stream = await startCall();
       if (!stream) return;
+      streamRef.current = stream;
 
       if (isMentor) {
         initiator = true;
         setWaiting(true);
       }
 
-      socket.on("video-offer", async ({ offer }) => {
-        if (initiator) return;
-        const pc = createPeerConnection(stream);
-        await pc.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        socket.emit("video-answer", { answer, sessionId });
-      });
-
-      socket.on("video-answer", async ({ answer }) => {
-        if (!initiator) return;
-        if (pcRef.current) {
-          await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-        }
-      });
-
-      socket.on("ice-candidate", async ({ candidate }) => {
-        if (pcRef.current && candidate) {
-          try {
-            await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch {}
-        }
-      });
-
-      socket.on("call-ended", () => {
-        cleanupMedia();
-        onCallEnded?.();
-      });
+      processPendingOffer();
 
       if (initiator) {
-        const pc = createPeerConnection(stream);
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket.emit("video-offer", { offer, sessionId });
+        createOfferForPeer();
       }
     };
 
-    const timeout = setTimeout(() => init(), 500);
+    init();
 
     return () => {
-      clearTimeout(timeout);
       cleanupMedia();
       socket.off("video-offer");
       socket.off("video-answer");
       socket.off("ice-candidate");
       socket.off("call-ended");
+      socket.off("participant_present");
     };
   }, [sessionId, isMentor, socketRef]);
 

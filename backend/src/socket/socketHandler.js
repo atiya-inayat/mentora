@@ -3,9 +3,6 @@ import Session from "../models/Session.js";
 import Booking from "../models/Booking.js";
 import jwt from "jsonwebtoken";
 
-const FIFTEEN_MIN_MS = 15 * 60 * 1000;
-const SESSION_DURATION_MS = 60 * 60 * 1000;
-
 const resolveSession = async (id) => {
   let session = await Session.findById(id);
   if (!session) {
@@ -23,20 +20,10 @@ const isParticipant = async (session, userId) => {
   );
 };
 
-const getTimeStatus = (session) => {
-  const now = new Date();
-  if (session.status === "completed" || session.status === "expired") return session.status;
-  if (!session.scheduledAt) return "active";
-
-  const scheduledAt = new Date(session.scheduledAt);
-  const expiresAt = session.expiresAt
-    ? new Date(session.expiresAt)
-    : new Date(scheduledAt.getTime() + SESSION_DURATION_MS);
-
-  if (now > expiresAt) return "expired";
-  if (now >= scheduledAt) return "active";
-  if (now >= scheduledAt.getTime() - FIFTEEN_MIN_MS) return "ready_to_start";
-  return "upcoming";
+const isMentor = async (session, userId) => {
+  const booking = await Booking.findById(session.bookingId);
+  if (!booking) return false;
+  return booking.mentorId.toString() === userId.toString();
 };
 
 export const initSocket = (io) => {
@@ -70,23 +57,12 @@ export const initSocket = (io) => {
       try {
         const session = await resolveSession(sessionId);
         if (!session) {
-          socket.emit("error", { message: "Session not found." });
+          socket.emit("error", { message: "The meeting is being prepared. Please try again." });
           return;
         }
 
-        const timeStatus = getTimeStatus(session);
-        if (timeStatus === "expired") {
-          socket.emit("error", { message: "This session has expired." });
-          return;
-        }
-
-        if (timeStatus === "completed") {
+        if (session.status === "completed") {
           socket.emit("error", { message: "This session has already ended." });
-          return;
-        }
-
-        if (session.status !== "ongoing") {
-          socket.emit("error", { message: "Session must be ongoing." });
           return;
         }
 
@@ -95,17 +71,21 @@ export const initSocket = (io) => {
           return;
         }
 
+        if (session.status !== "host_joined" && session.status !== "guest_waiting" && session.status !== "live") {
+          socket.emit("error", { message: "Session is not available right now." });
+          return;
+        }
+
         const roomId = session._id.toString();
         socket.join(roomId);
         socket.currentRoomId = roomId;
 
         const messages = await Message.find({ sessionId: roomId }).sort({ createdAt: 1 }).limit(100);
-
         socket.emit("session_messages", messages);
 
         const otherSockets = await io.in(roomId).fetchSockets();
         if (otherSockets.length > 1) {
-          socket.emit("participant_joined", { userId: socket.user.sub });
+          socket.to(roomId).emit("participant_present", { userId: socket.user.sub });
         }
       } catch (error) {
         console.error("join_session error:", error);
@@ -121,14 +101,8 @@ export const initSocket = (io) => {
           return;
         }
 
-        const timeStatus = getTimeStatus(session);
-        if (timeStatus !== "active") {
-          socket.emit("error", { message: "Chat is only available during the active session time." });
-          return;
-        }
-
-        if (session.status !== "ongoing") {
-          socket.emit("error", { message: "Session must be ongoing." });
+        if (session.status !== "live") {
+          socket.emit("error", { message: "Chat is only available during an active session." });
           return;
         }
 
@@ -138,15 +112,6 @@ export const initSocket = (io) => {
         if (!(await isParticipant(session, senderId))) {
           socket.emit("error", { message: "You are not a participant of this session." });
           return;
-        }
-
-        const messageCount = await Message.countDocuments({ sessionId: roomId });
-        if (messageCount === 0) {
-          const booking = await Booking.findById(session.bookingId);
-          if (!booking || booking.mentorId.toString() !== senderId) {
-            socket.emit("error", { message: "Only the mentor can start the conversation." });
-            return;
-          }
         }
 
         if (!content && !file) {
@@ -159,7 +124,6 @@ export const initSocket = (io) => {
         if (file) messageData.file = file;
 
         const message = await Message.create(messageData);
-
         io.to(roomId).emit("receive_message", message);
       } catch (error) {
         console.error("send_message error:", error);
@@ -187,6 +151,22 @@ export const initSocket = (io) => {
     socket.on("end-call", ({ sessionId }) => {
       const roomId = socket.currentRoomId;
       if (roomId) socket.to(roomId).emit("call-ended", { senderId: socket.user.sub });
+    });
+
+    socket.on("admission_request", async ({ sessionId }) => {
+      try {
+        const session = await resolveSession(sessionId);
+        if (!session) return;
+        const booking = await Booking.findById(session.bookingId);
+        if (booking) {
+          io.to(`user:${booking.mentorId}`).emit("admission_request", {
+            sessionId: session._id.toString(),
+            menteeId: socket.user.sub,
+          });
+        }
+      } catch (error) {
+        console.error("admission_request error:", error);
+      }
     });
 
     socket.on("disconnect", () => {

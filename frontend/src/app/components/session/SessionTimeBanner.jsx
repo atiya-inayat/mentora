@@ -43,7 +43,7 @@ export default function SessionTimeBanner({
     );
   }
 
-  if (timeStatus === "ready") {
+  if (timeStatus === "joinable") {
     return (
       <div className="p-4 text-center bg-green-500/10 text-green-400 rounded-xl border border-green-500/20">
         <Play className="inline w-5 h-5 mr-2 mb-0.5" />
@@ -51,22 +51,17 @@ export default function SessionTimeBanner({
           The session is ready! You can join now.
         </span>
         <div className="mt-1.5 text-xs text-green-400/60">
-          Click Join Session to enter the waiting room
+          Click Join Session to enter the meeting
         </div>
       </div>
     );
   }
 
-  if (timeStatus === "waiting") {
+  if (timeStatus === "live") {
     return (
-      <div className="p-4 text-center bg-yellow-500/10 text-yellow-400 rounded-xl border border-yellow-500/20">
-        <Loader className="inline w-5 h-5 mr-2 mb-0.5 animate-spin" />
-        <span className="font-medium">
-          Waiting for the other participant to join...
-        </span>
-        <div className="mt-1.5 text-xs text-yellow-400/60">
-          The session will start automatically when both participants have joined
-        </div>
+      <div className="p-4 text-center bg-green-500/15 text-green-400 rounded-xl border border-green-500/30">
+        <Loader className="inline w-5 h-5 mr-2 mb-0.5 animate-pulse" />
+        <span className="font-medium">Session is live</span>
       </div>
     );
   }

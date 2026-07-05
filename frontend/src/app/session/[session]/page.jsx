@@ -4,7 +4,13 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
-import { useSession, useJoinSession, useEndSession } from "@/lib/hooks/useSession";
+import {
+  useSession,
+  useJoinSession,
+  useAdmitGuest,
+  useDeclineGuest,
+  useEndSession,
+} from "@/lib/hooks/useSession";
 import useAuthStore from "@/lib/store/authStore";
 import Navbar from "@/app/components/shared/Navbar";
 import ConfirmDialog from "@/app/components/shared/ConfirmDialog";
@@ -12,7 +18,6 @@ import VideoCall from "@/app/components/session/VideoCall";
 import SessionTimeBanner from "@/app/components/session/SessionTimeBanner";
 import { Spinner } from "@/app/components/shared/LoadingSkeleton";
 import usePageTitle from "@/lib/hooks/usePageTitle";
-import { toast } from "sonner";
 import api from "@/lib/axios";
 import {
   Send,
@@ -23,10 +28,12 @@ import {
   FileText,
   Download,
   Clock,
-  User,
-  Loader,
   Video,
+  User,
+  LogOut,
 } from "lucide-react";
+
+const ADMISSION_TIMEOUT_MS = 60000;
 
 export default function SessionPage() {
   usePageTitle("Session");
@@ -35,6 +42,8 @@ export default function SessionPage() {
   const router = useRouter();
   const { data: sessionData, isLoading, refetch } = useSession(sessionId);
   const { mutate: joinSession, isPending: joining } = useJoinSession();
+  const { mutate: admitGuest, isPending: admitting } = useAdmitGuest();
+  const { mutate: declineGuest } = useDeclineGuest();
   const { mutate: endSession, isPending: ending } = useEndSession();
 
   const [messages, setMessages] = useState([]);
@@ -43,27 +52,68 @@ export default function SessionPage() {
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [admissionRequest, setAdmissionRequest] = useState(null);
+  const [isLive, setIsLive] = useState(false);
+  const [hasJoinedRoom, setHasJoinedRoom] = useState(false);
+
   const fileInputRef = useRef(null);
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const admissionTimerRef = useRef(null);
 
   const session = sessionData?.data;
   const mentorId = session?.bookingId?.mentorId?._id;
   const menteeId = session?.bookingId?.menteeId?._id;
   const isMentor = user?.id === mentorId;
   const receiverId = isMentor ? menteeId : mentorId;
-  const isCompleted = session?.status === "completed";
   const timeStatus = session?.timeStatus || "upcoming";
   const scheduledAt = session?.scheduledAt;
-  const waitingFor = session?.waitingFor || [];
-  const isLive = session?.status === "live";
+  const sessionStatus = session?.status;
+  const menteeName = session?.bookingId?.menteeId?.name || "the mentee";
+  const mentorHasJoined = session?.participants?.mentor === true;
+  const menteeHasJoined = session?.participants?.mentee === true;
+  const hasJoined = isMentor ? mentorHasJoined : menteeHasJoined;
 
-  const canVideoCall = isLive;
-  const canChat = isLive;
+  useEffect(() => {
+    if (!sessionId) return;
+    if (sessionStatus === "live") setIsLive(true);
+  }, [sessionId, sessionStatus]);
 
-  const handleSessionStarted = useCallback(() => {
-    refetch();
-  }, [refetch]);
+  const handleJoinSession = useCallback(() => {
+    const bookingId = session?.bookingId?._id || session?.bookingId;
+    joinSession(bookingId, {
+      onSuccess: () => {
+        setHasJoinedRoom(true);
+        refetch();
+      },
+      onError: (err) => {
+        const msg = err?.response?.data?.message || "Could not join the session.";
+        setError(msg);
+        setTimeout(() => setError(""), 5000);
+      },
+    });
+  }, [session, joinSession, refetch]);
+
+  const handleAdmit = useCallback(() => {
+    if (!sessionId) return;
+    admitGuest(sessionId, {
+      onSuccess: () => {
+        setAdmissionRequest(null);
+        setIsLive(true);
+        refetch();
+      },
+      onError: (err) => {
+        setError(err?.response?.data?.message || "Could not admit participant.");
+        setTimeout(() => setError(""), 5000);
+      },
+    });
+  }, [sessionId, admitGuest, refetch]);
+
+  const handleDecline = useCallback(() => {
+    if (!sessionId) return;
+    declineGuest(sessionId);
+    setAdmissionRequest(null);
+  }, [sessionId, declineGuest]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -81,9 +131,22 @@ export default function SessionPage() {
       setMessages((prev) => [...prev, message]);
     });
 
-    socket.on("session_started", () => {
-      handleSessionStarted();
+    socket.on("admission_request", ({ menteeName: name }) => {
+      setAdmissionRequest({ menteeName: name || "A mentee" });
+      if (admissionTimerRef.current) clearTimeout(admissionTimerRef.current);
+      admissionTimerRef.current = setTimeout(() => {
+        setAdmissionRequest(null);
+      }, ADMISSION_TIMEOUT_MS);
+    });
+
+    socket.on("guest_admitted", () => {
+      setIsLive(true);
       refetch();
+    });
+
+    socket.on("admission_declined", () => {
+      setError("The host declined your request to join.");
+      setTimeout(() => setError(""), 5000);
     });
 
     socket.on("session_ended", () => {
@@ -100,12 +163,15 @@ export default function SessionPage() {
     return () => {
       socket.off("session_messages");
       socket.off("receive_message");
-      socket.off("session_started");
+      socket.off("admission_request");
+      socket.off("guest_admitted");
+      socket.off("admission_declined");
       socket.off("session_ended");
       socket.off("error");
       disconnectSocket();
+      if (admissionTimerRef.current) clearTimeout(admissionTimerRef.current);
     };
-  }, [sessionId, router, handleSessionStarted, refetch]);
+  }, [sessionId, router, refetch]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -152,12 +218,7 @@ export default function SessionPage() {
 
       setMessages((prev) => [
         ...prev,
-        {
-          content: "",
-          file: uploaded,
-          senderId: user?.id,
-          createdAt: new Date(),
-        },
+        { content: "", file: uploaded, senderId: user?.id, createdAt: new Date() },
       ]);
     } catch (err) {
       setError(err?.response?.data?.message || "File upload failed");
@@ -166,25 +227,6 @@ export default function SessionPage() {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  };
-
-  const getOtherParticipantName = () => {
-    if (!session?.bookingId) return "the other participant";
-    if (isMentor) return session.bookingId.menteeId?.name || "Mentee";
-    return session.bookingId.mentorId?.name || "Mentor";
-  };
-
-  const getWaitingMessage = () => {
-    if (waitingFor.includes("mentor") && waitingFor.includes("mentee")) {
-      return "Waiting for participants to join...";
-    }
-    if (waitingFor.includes("mentor")) {
-      return "You're in the session. Waiting for the mentor to join...";
-    }
-    if (waitingFor.includes("mentee")) {
-      return "You're in the session. Waiting for the mentee to join...";
-    }
-    return "Waiting for participants...";
   };
 
   if (isLoading) {
@@ -201,7 +243,7 @@ export default function SessionPage() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh] text-white/40">
-          <p>Session not found.</p>
+          <p>The meeting is being prepared. Please try again in a few moments.</p>
         </div>
       </main>
     );
@@ -221,9 +263,9 @@ export default function SessionPage() {
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <MessageSquare className="w-6 h-6 text-primary" />
+            <Video className="w-6 h-6 text-primary" />
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Session</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Meeting</h1>
               {session?.bookingId?.mentorId?.name && (
                 <p className="text-sm text-muted">
                   {isMentor
@@ -235,7 +277,7 @@ export default function SessionPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {canChat && (
+            {isLive && (
               <button
                 onClick={() => setShowChat(!showChat)}
                 className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full ${
@@ -249,14 +291,14 @@ export default function SessionPage() {
               </button>
             )}
 
-            {isMentor && isLive && (
+            {isMentor && (isLive || sessionStatus === "host_joined" || sessionStatus === "guest_waiting") && (
               <button
                 onClick={() => setShowEndConfirm(true)}
                 disabled={ending}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/[0.15] disabled:opacity-50"
               >
                 <StopCircle className="w-4 h-4" />
-                {ending ? "Ending..." : "End Session"}
+                {ending ? "Ending..." : "End Meeting"}
               </button>
             )}
           </div>
@@ -269,17 +311,10 @@ export default function SessionPage() {
           readyToStartIn={session?.readyToStartIn}
         />
 
-        {(timeStatus === "ready" || (timeStatus === "waiting" && !session?.participants?.[isMentor ? "mentor" : "mentee"])) && (
+        {timeStatus === "joinable" && !hasJoined && (
           <div className="flex justify-center mt-4">
             <button
-              onClick={() => {
-                const bookingId = session?.bookingId?._id || session?.bookingId;
-                joinSession(bookingId, {
-                  onSuccess: () => refetch(),
-                  onError: (err) =>
-                    toast.error(err?.response?.data?.message || "Cannot join session"),
-                });
-              }}
+              onClick={handleJoinSession}
               disabled={joining}
               className="inline-flex items-center gap-2 px-8 py-3 text-base font-medium btn-primary rounded-xl disabled:opacity-50"
             >
@@ -293,46 +328,87 @@ export default function SessionPage() {
           <div className="p-3 mt-3 mb-3 text-sm text-red-600 bg-red-100 rounded-xl">{error}</div>
         )}
 
+        {/* Admission Request Modal (Mentor Only) */}
+        {isMentor && admissionRequest && !isLive && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-sm p-6 mx-4 card rounded-2xl">
+              <div className="flex flex-col items-center text-center">
+                <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-primary/20">
+                  <User className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-1">Join Request</h3>
+                <p className="text-sm text-muted mb-6">
+                  {admissionRequest.menteeName} wants to join this session.
+                </p>
+                <div className="flex items-center gap-3 w-full">
+                  <button
+                    onClick={handleDecline}
+                    className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl border border-white/10 text-white/70 hover:bg-white/[0.06] transition"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={handleAdmit}
+                    disabled={admitting}
+                    className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
+                  >
+                    {admitting ? "Admitting..." : "Admit"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="relative flex gap-4">
           <div className={`transition-all duration-300 ${showChat ? "w-[65%]" : "w-full"}`}>
             <div className="h-[70vh] rounded-2xl overflow-hidden border border-white/5 shadow-lg">
-              {canVideoCall ? (
+              {isLive ? (
                 <VideoCall
                   socketRef={socketRef}
                   sessionId={sessionId}
                   isMentor={isMentor}
                   onCallEnded={() => {}}
                 />
-              ) : timeStatus === "waiting" || session?.status === "waiting" ? (
+              ) : isMentor && (sessionStatus === "host_joined" || sessionStatus === "guest_waiting") ? (
                 <div className="flex flex-col items-center justify-center w-full h-full bg-gray-900 text-white/70 px-6">
                   <div className="relative mb-6">
                     <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
                       <Video className="w-10 h-10 text-primary" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center">
-                      <Clock className="w-3.5 h-3.5 text-white" />
-                    </div>
                   </div>
-                  <p className="text-xl font-medium text-white mb-2">
-                    {"You're connected"}
-                  </p>
+                  <p className="text-xl font-medium text-white mb-2">Meeting Ready</p>
                   <p className="text-sm text-white/50 text-center max-w-sm">
-                    {getWaitingMessage()}
+                    {sessionStatus === "guest_waiting"
+                      ? `${menteeName} is waiting to be admitted.`
+                      : "Waiting for participants..."}
                   </p>
-                  <div className="flex items-center gap-3 mt-6">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04]">
-                      <div className={`w-2 h-2 rounded-full ${waitingFor.includes("mentor") ? "bg-yellow-400 animate-pulse" : "bg-green-400"}`} />
-                      <span className="text-xs text-white/60">Mentor</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04]">
-                      <div className={`w-2 h-2 rounded-full ${waitingFor.includes("mentee") ? "bg-yellow-400 animate-pulse" : "bg-green-400"}`} />
-                      <span className="text-xs text-white/60">Mentee</span>
+                  {sessionStatus === "guest_waiting" && (
+                    <button
+                      onClick={handleAdmit}
+                      disabled={admitting}
+                      className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
+                    >
+                      <Video className="w-4 h-4" />
+                      {admitting ? "Admitting..." : "Admit to Meeting"}
+                    </button>
+                  )}
+                </div>
+              ) : !isMentor && (sessionStatus === "guest_waiting" || (hasJoinedRoom && sessionStatus !== "live")) ? (
+                <div className="flex flex-col items-center justify-center w-full h-full bg-gray-900 text-white/70 px-6">
+                  <div className="relative mb-6">
+                    <div className="w-20 h-20 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                      <Clock className="w-10 h-10 text-yellow-400" />
                     </div>
                   </div>
+                  <p className="text-xl font-medium text-white mb-2">Waiting for the host</p>
+                  <p className="text-sm text-white/50 text-center max-w-sm">
+                    The mentor will admit you shortly. Do not close this page.
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center w-full h-full bg-gray-900 text-white/70">
-                  <MessageSquare className="w-16 h-16 mb-4 opacity-30" />
+                  <Video className="w-16 h-16 mb-4 opacity-30" />
                   {timeStatus === "upcoming" && (
                     <>
                       <p className="text-lg">Waiting for session time...</p>
@@ -341,15 +417,15 @@ export default function SessionPage() {
                       </p>
                     </>
                   )}
-                  {timeStatus === "ready" && (
+                  {timeStatus === "joinable" && !hasJoinedRoom && (
                     <>
                       <p className="text-lg">Session ready to start</p>
                       <p className="mt-1 text-sm opacity-50">
-                        Video and chat will activate once both participants join
+                        Click the Join Session button above to enter
                       </p>
                     </>
                   )}
-                  {(timeStatus === "expired" || timeStatus === "completed" || isCompleted) && (
+                  {(timeStatus === "expired" || sessionStatus === "completed") && (
                     <>
                       <p className="text-lg">Session has ended</p>
                       <p className="mt-1 text-sm opacity-50">This session is no longer available</p>
@@ -360,7 +436,7 @@ export default function SessionPage() {
             </div>
           </div>
 
-          {showChat && canChat && (
+          {showChat && isLive && (
             <div className="w-[35%] h-[70vh] flex flex-col card rounded-2xl">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <h3 className="text-sm font-semibold text-primary">Messages</h3>
@@ -471,13 +547,13 @@ export default function SessionPage() {
       <ConfirmDialog
         open={showEndConfirm}
         onOpenChange={setShowEndConfirm}
-        title="End Session"
-        description="Are you sure you want to end this session? This will release the payment to you (90% after platform fee) and cannot be undone."
-        confirmLabel="End Session"
+        title="End Meeting"
+        description="Are you sure you want to end this meeting? This will disconnect all participants and cannot be undone."
+        confirmLabel="End Meeting"
         variant="danger"
         loading={ending}
         onConfirm={() => {
-          endSession(session?.bookingId?._id, {
+          endSession(session?.bookingId?._id || session?.bookingId, {
             onSuccess: () => router.push("/bookings"),
           });
           setShowEndConfirm(false);
