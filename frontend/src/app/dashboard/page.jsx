@@ -13,7 +13,7 @@ import {
 import { PageError } from "../components/shared/PageError";
 import usePageTitle from "@/lib/hooks/usePageTitle";
 import { toast } from "sonner";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -40,11 +40,15 @@ const statusStyles = {
 export default function MenteeDashboard() {
   usePageTitle("Dashboard");
   const router = useRouter();
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, isNewUser, clearNewUserFlag } = useAuthStore();
   const { data, isLoading, isError, error, refetch } = useMyBookings();
   const { mutate: joinSession, isPending: joining } = useJoinSession();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (isNewUser) clearNewUserFlag();
+  }, []);
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
@@ -185,7 +189,7 @@ export default function MenteeDashboard() {
                 Browse Mentors
               </Link>
               <h1 className="text-3xl font-semibold text-foreground">
-                Welcome back, {user?.name}
+                {isNewUser ? "Welcome" : "Welcome back"}, {user?.name}
               </h1>
               <p className="mt-1 text-muted">Track your mentoring sessions</p>
             </div>

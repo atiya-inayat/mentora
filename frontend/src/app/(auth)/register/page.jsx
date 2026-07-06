@@ -49,7 +49,7 @@ const roles = [
 export default function RegisterPage() {
   usePageTitle("Register");
   const router = useRouter();
-  const { setAuth } = useAuthStore();
+  const { setAuth, markAsNewUser } = useAuthStore();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -76,6 +76,7 @@ export default function RegisterPage() {
       queryClient.clear();
       const { user } = data;
       setAuth(user);
+      markAsNewUser();
       const routes = {
         admin: "/admin",
         mentor: "/mentor/dashboard",

@@ -11,6 +11,7 @@ const useAuthStore = create((set, get) => ({
   isHydrating: true,
 
   isInitialized: false,
+  isNewUser: false,
 
   hydrate: async () => {
     if (get().isInitialized) return;
@@ -93,6 +94,14 @@ const useAuthStore = create((set, get) => ({
 
   getRole: () => {
     return get().user?.role || null;
+  },
+
+  markAsNewUser: () => {
+    set({ isNewUser: true });
+  },
+
+  clearNewUserFlag: () => {
+    set({ isNewUser: false });
   },
 
   setAuth: (user) => {
