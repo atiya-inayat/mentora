@@ -79,8 +79,11 @@ app.use(cookieParser());
 app.use("/uploads", protect, express.static(uploadsDir));
 app.use(limiter);
 
-app.get("/health", (req, res) => {
-  res.send("OK");
+app.get("/api", (req, res) => {
+  res.json({
+    message: "Mentora API is running ",
+    status: "OK",
+  });
 });
 
 app.use("/api/auth/register", authBackoff, registerLimiterExport);
