@@ -40,7 +40,7 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 w-full nav-blur">
       <div className="flex items-center justify-between px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <Link
-          href={user ? dashboardUrl : "/"}
+          href="/"
           className="text-xl font-bold tracking-tight text-foreground"
         >
           Mentora
