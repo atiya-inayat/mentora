@@ -22,7 +22,7 @@ import axios from "axios";
  * This is the ONLY way we transmit authentication
  */
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: "",
   withCredentials: true, // CRITICAL: Sends httpOnly cookies with requests
 });
 
