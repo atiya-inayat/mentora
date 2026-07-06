@@ -137,54 +137,53 @@ export default function MentorProfilePage() {
           {/* Left: Profile */}
           <div>
             <div className="glass-card rounded-3xl overflow-hidden">
-              <div className="relative aspect-[4/3] md:aspect-[16/9] bg-surface">
-                {mentor.userId?.photo ? (
-                  <img
-                    src={mentor.userId.photo.startsWith("http") ? mentor.userId.photo : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}${mentor.userId.photo}`}
-                    alt={mentor.userId?.name}
-                    className="absolute inset-0 w-full h-full object-contain bg-background"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full">
-                    <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center">
-                      <span className="text-5xl text-white/20 font-semibold">
+              <div className="flex items-start gap-5 p-6 md:p-8">
+                <div className="shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden bg-surface shadow-lg">
+                  {mentor.userId?.photo ? (
+                    <img
+                      src={mentor.userId.photo.startsWith("http") ? mentor.userId.photo : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}${mentor.userId.photo}`}
+                      alt={mentor.userId?.name}
+                      className="w-full h-full object-cover object-center"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-white/5">
+                      <span className="text-3xl text-white/20 font-semibold">
                         {mentor.userId?.name?.charAt(0) || "?"}
                       </span>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6 md:p-8">
-                <h1 className="text-2xl font-semibold text-primary md:text-3xl">
-                  {mentor.userId?.name}
-                </h1>
-
-                <div className="flex flex-wrap items-center gap-3 mt-3">
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-background border border-white/5">
-                    <DollarSign className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">${mentor.hourlyRate}/hr</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-background border border-white/5">
-                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    <span className="text-sm text-primary">
-                      {mentor.averageRating ? mentor.averageRating.toFixed(1) : "New"}
-                    </span>
-                  </div>
+                  )}
                 </div>
 
-                <p className="mt-5 leading-7 text-white/60">{mentor.bio}</p>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl font-semibold text-primary md:text-3xl">
+                    {mentor.userId?.name}
+                  </h1>
 
-                <div className="flex flex-wrap gap-2 mt-5">
-                  {mentor.skills?.map((skill, i) => (
-                    <span key={i} className="flex items-center gap-1 px-3 py-1 text-sm rounded-full border border-white/5 bg-background text-white/70">
-                      <Code className="w-3 h-3" />
-                      {skill}
-                    </span>
-                  ))}
+                  <div className="flex flex-wrap items-center gap-3 mt-3">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-background border border-white/5">
+                      <DollarSign className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">${mentor.hourlyRate}/hr</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-background border border-white/5">
+                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                      <span className="text-sm text-primary">
+                        {mentor.averageRating ? mentor.averageRating.toFixed(1) : "New"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="mt-5 leading-7 text-white/60">{mentor.bio}</p>
+
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    {mentor.skills?.map((skill, i) => (
+                      <span key={i} className="flex items-center gap-1 px-3 py-1 text-sm rounded-full border border-white/5 bg-background text-white/70">
+                        <Code className="w-3 h-3" />
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
             {/* Availability Schedule */}
             <div className="p-6 mt-8 glass-card rounded-3xl">

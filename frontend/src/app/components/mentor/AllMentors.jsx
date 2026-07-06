@@ -40,7 +40,7 @@ export default function AllMentors() {
     <div className="relative overflow-hidden">
       <div className="flex gap-6 marquee-scroll">
         {[...mentors, ...mentors].map((mentor, i) => (
-          <div key={`${mentor._id}-${i}`} className="shrink-0 w-[340px]">
+          <div key={`${mentor._id}-${i}`} className="shrink-0 w-[340px] h-[260px]">
             <LandingMentorCard mentor={mentor} />
           </div>
         ))}

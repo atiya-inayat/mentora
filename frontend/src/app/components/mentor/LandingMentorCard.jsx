@@ -1,7 +1,41 @@
+import { useState } from "react";
 import Link from "next/link";
 import { User, ArrowRight } from "lucide-react";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+function AvatarWithSkeleton({ src, alt }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  if (error || !src) {
+    return (
+      <div className="flex items-center justify-center w-full h-full bg-background">
+        <User className="w-10 h-10 text-white/15" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 bg-background">
+          <div className="w-full h-full bg-gradient-to-br from-white/[0.02] via-white/[0.04] to-white/[0.01] animate-pulse" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+        className={`w-full h-full object-cover object-center ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </>
+  );
+}
 
 export default function LandingMentorCard({ mentor }) {
   if (!mentor) return null;
@@ -13,30 +47,20 @@ export default function LandingMentorCard({ mentor }) {
     : null;
 
   return (
-    <div className="card overflow-hidden group hover:-translate-y-0.5 transition-all duration-300">
-      <div className="flex items-start gap-4 p-4">
-        <div className="shrink-0 w-[120px] h-[120px] rounded-xl overflow-hidden bg-background">
-          {photoUrl ? (
-            <img
-              src={photoUrl}
-              alt={mentor.userId?.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="flex items-center justify-center w-full h-full">
-              <User className="w-10 h-10 text-muted" />
-            </div>
-          )}
+    <div className="flex flex-col h-full card overflow-hidden group hover:-translate-y-0.5 transition-all duration-300">
+      <div className="flex items-start gap-4 p-4 flex-1">
+        <div className="relative shrink-0 w-[120px] h-[120px] rounded-xl overflow-hidden bg-background">
+          <AvatarWithSkeleton src={photoUrl} alt={mentor.userId?.name} />
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 flex flex-col">
           <h3 className="text-base font-semibold text-foreground truncate">
             {mentor.userId?.name}
           </h3>
           <p className="mt-1 text-sm text-muted line-clamp-2">
             {mentor.bio || "Experienced mentor ready to help you grow."}
           </p>
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
+          <div className="flex flex-wrap gap-1.5 mt-auto pt-2.5">
             {mentor.skills?.slice(0, 3).map((skill, i) => (
               <span
                 key={i}

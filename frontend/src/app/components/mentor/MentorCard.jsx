@@ -1,7 +1,41 @@
+import { useState } from "react";
 import Link from "next/link";
 import { Star, User, Calendar, Clock } from "lucide-react";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+function ImageWithSkeleton({ src, alt }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  if (error || !src) {
+    return (
+      <div className="flex items-center justify-center w-full h-full bg-surface">
+        <User className="w-14 h-14 text-white/15" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 bg-surface">
+          <div className="w-full h-full bg-gradient-to-br from-white/[0.02] via-white/[0.04] to-white/[0.01] animate-pulse" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+        className={`absolute inset-0 w-full h-full object-cover object-center group-hover:scale-103 transition-all duration-700 ease-out ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </>
+  );
+}
 
 export default function MentorCard({ mentor }) {
   if (!mentor) return null;
@@ -20,18 +54,8 @@ export default function MentorCard({ mentor }) {
       href={`/mentors/${mentor._id}`}
       className="card overflow-hidden group hover:-translate-y-0.5 transition-all duration-300 block"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface">
-        {photoUrl ? (
-          <img
-            src={photoUrl}
-            alt={mentor.userId?.name}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full">
-            <User className="w-16 h-16 text-muted" />
-          </div>
-        )}
+      <div className="relative aspect-square overflow-hidden bg-surface">
+        <ImageWithSkeleton src={photoUrl} alt={mentor.userId?.name} />
       </div>
 
       <div className="p-5">
