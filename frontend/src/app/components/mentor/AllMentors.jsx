@@ -11,7 +11,10 @@ export default function AllMentors() {
       <div className="flex items-center justify-center py-20">
         <div className="flex gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="w-[340px] h-[200px] rounded-xl bg-surface animate-pulse" />
+            <div
+              key={i}
+              className="w-[340px] h-[200px] rounded-xl bg-surface animate-pulse"
+            />
           ))}
         </div>
       </div>
@@ -40,7 +43,10 @@ export default function AllMentors() {
     <div className="relative overflow-hidden">
       <div className="flex gap-6 marquee-scroll">
         {[...mentors, ...mentors].map((mentor, i) => (
-          <div key={`${mentor._id}-${i}`} className="shrink-0 w-[340px] h-[260px]">
+          <div
+            key={`${mentor._id}-${i}`}
+            className="shrink-0 w-[340px] h-[260px]"
+          >
             <LandingMentorCard mentor={mentor} />
           </div>
         ))}
